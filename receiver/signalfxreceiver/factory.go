@@ -63,7 +63,6 @@ func (f *Factory) CreateTraceReceiver(
 	consumer consumer.TraceConsumer,
 ) (receiver.TraceReceiver, error) {
 
-	rCfg := cfg.(*Config)
 	return nil, configerror.ErrDataTypeIsNotSupported
 }
 

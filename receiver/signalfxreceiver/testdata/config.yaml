@@ -11,6 +11,6 @@ exporters:
 service:
   pipelines:
     metrics:
-      receivers: [signal, signalfx/allsettings]
+      receivers: [signalfx, signalfx/allsettings]
       processors: [exampleprocessor]
       exporters: [exampleexporter]

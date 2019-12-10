@@ -16,6 +16,7 @@ package signalfxreceiver
 
 import (
 	"context"
+	"github.com/open-telemetry/opentelemetry-collector/consumer"
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-collector/config/configcheck"
@@ -32,10 +33,12 @@ func TestCreateDefaultConfig(t *testing.T) {
 	assert.NoError(t, configcheck.ValidateConfig(cfg))
 }
 
-type mockTraceConsumer struct {
+type mockMetricsConsumer struct {
 }
 
-func (m *mockTraceConsumer) ConsumeTraceData(ctx context.Context, td consumerdata.TraceData) error {
+var _ (consumer.MetricsConsumer) = (*mockMetricsConsumer)(nil)
+
+func (m *mockMetricsConsumer) ConsumeMetricsData(ctx context.Context, md consumerdata.MetricsData) error {
 	return nil
 }
 
@@ -43,15 +46,15 @@ func TestCreateReceiver(t *testing.T) {
 	factory := &Factory{}
 	cfg := factory.CreateDefaultConfig()
 
-	tReceiver, err := factory.CreateTraceReceiver(context.Background(), zap.NewNop(), cfg, &mockTraceConsumer{})
+	tReceiver, err := factory.CreateMetricsReceiver(zap.NewNop(), cfg, &mockMetricsConsumer{})
 	assert.Nil(t, err, "receiver creation failed")
 	assert.NotNil(t, tReceiver, "receiver creation failed")
 
-	tReceiver, err = factory.CreateTraceReceiver(context.Background(), zap.NewNop(), cfg, &mockTraceConsumer{})
+	tReceiver, err = factory.CreateMetricsReceiver( zap.NewNop(), cfg, &mockMetricsConsumer{})
 	assert.Nil(t, err, "receiver creation failed")
 	assert.NotNil(t, tReceiver, "receiver creation failed")
 
-	mReceiver, err := factory.CreateMetricsReceiver(zap.NewNop(), cfg, nil)
+	mReceiver, err := factory.CreateTraceReceiver(context.Background(), zap.NewNop(), cfg, nil)
 	assert.Equal(t, err, configerror.ErrDataTypeIsNotSupported)
 	assert.Nil(t, mReceiver)
 }

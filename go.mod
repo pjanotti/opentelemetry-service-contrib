@@ -7,22 +7,23 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azure
 replace github.com/open-telemetry/opentelemetry-collector-contrib/receiver/collectdreceiver => ./receiver/collectdreceiver
 
 require (
+	github.com/census-instrumentation/opencensus-proto v0.2.1
 	github.com/client9/misspell v0.3.4
 	github.com/google/addlicense v0.0.0-20190907113143-be125746c2c4
-	github.com/onsi/ginkgo v1.10.1 // indirect
-	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector v0.2.1-0.20191126183205-e94dd19191e0
+	github.com/open-telemetry/opentelemetry-collector v0.2.1-0.20191209163440-5d463fe48816
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.0.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter v0.0.0-20191203211755-8ae89debd6c5
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/stackdriverexporter v0.0.0-20191126142441-b2a048090ad6
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/collectdreceiver v0.0.0-00010101000000-000000000000
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/sapmreceiver v0.0.0-20191209183045-9707a2732f37
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinscribereceiver v0.0.0-20191126142441-b2a048090ad6
+	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.0.0-20191209183045-9707a2732f37 // indirect
 	github.com/pavius/impi v0.0.0-20180302134524-c1cbdcb8df2b
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392 // indirect
-	golang.org/x/lint v0.0.0-20190930215403-16217165b5de
-	golang.org/x/tools v0.0.0-20191119175705-11e13f1c3fd7
-	gopkg.in/yaml.v2 v2.2.4 // indirect
+	github.com/signalfx/com_signalfx_metrics_protobuf v0.0.0-20190530013331-054be550cb49
+	github.com/stretchr/testify v1.4.0
+	go.uber.org/zap v1.13.0
+	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
+	golang.org/x/tools v0.0.0-20191205225056-3393d29bb9fe
 	honnef.co/go/tools v0.0.1-2019.2.3
 )

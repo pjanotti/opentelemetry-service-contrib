@@ -48,7 +48,6 @@ func TestLoadConfig(t *testing.T) {
 			ReceiverSettings: configmodels.ReceiverSettings{
 				TypeVal:  typeStr,
 				NameVal:  "signalfx/allsettings",
-				Endpoint: "127.0.0.1:12345",
 			},
 		})
 }
