@@ -20,8 +20,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/gorilla/mux"
 	"github.com/open-telemetry/opentelemetry-collector/consumer"
 	"github.com/open-telemetry/opentelemetry-collector/oterr"
 	"github.com/open-telemetry/opentelemetry-collector/receiver"
@@ -46,7 +48,6 @@ type sfxReceiver struct {
 }
 
 var _ receiver.MetricsReceiver = (*sfxReceiver)(nil)
-var _ http.Handler = (*sfxReceiver)(nil)
 
 func (r *sfxReceiver) MetricsSource() string {
 	const metricsSource string = "SignalFx"
@@ -62,7 +63,9 @@ func (r *sfxReceiver) StartMetricsReception(host receiver.Host) error {
 		err = nil
 
 		go func() {
-			host.ReportFatalError(errors.New("todo: not implemeted yet"))
+			if err := r.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				host.ReportFatalError(err)
+			}
 		}()
 	})
 
@@ -73,9 +76,9 @@ func (r *sfxReceiver) StopMetricsReception() error {
 	r.Lock()
 	defer r.Unlock()
 
-	var err = oterr.ErrAlreadyStopped
+	err := oterr.ErrAlreadyStopped
 	r.stopOnce.Do(func() {
-		err = errors.New("todo: not implemented yet")
+		err = r.server.Close()
 	})
 	return err
 }
@@ -96,14 +99,21 @@ func New(
 		nextConsumer: nextConsumer,
 		server: &http.Server{
 			Addr: config.Endpoint,
-			// TODO: What other properties to configure?
+			// TODO: Evaluate what properties should be configurable, for now
+			//		set some hard-coded values.
+			ReadHeaderTimeout: 20 * time.Second,
+			WriteTimeout:      20 * time.Second,
 		},
 	}
-	r.server.Handler = r
+
+	mux := mux.NewRouter()
+	mux.HandleFunc("v2/datapoint", r.handleReq)
+	r.server.Handler = mux
+
 	return r, nil
 }
 
-func (r *sfxReceiver) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		r.writeResponse(
 			resp,
@@ -126,6 +136,7 @@ func (r *sfxReceiver) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			resp,
 			http.StatusUnsupportedMediaType,
 			"\"Content-Encoding\" must be \"gzip\" or empty")
+		return
 	}
 
 	body, err := ioutil.ReadAll(req.Body)
@@ -134,21 +145,29 @@ func (r *sfxReceiver) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			resp,
 			http.StatusBadRequest,
 			"Failed to read message body")
+		return
 	}
 
-	if encoding == "gzip" {
-		// TODO: decompress before unmarshall
-	}
+	//if encoding == "gzip" {
+	//	// TODO: decompress before unmarshall
+	//}
 
-	var msg sfxpb.DataPointUploadMessage
+	msg := &sfxpb.DataPointUploadMessage{}
 	if err := proto.Unmarshal(body, msg); err != nil {
 		r.writeResponse(
 			resp,
 			http.StatusBadRequest,
 			"Failed to unmarshal message body")
+		return
 	}
 
-	md, _, err := metricDataToSignalFxV2(r.logger, msg.Datapoints)
+	if len(msg.Datapoints) == 0 {
+		// TODO: add observability, perhaps should be considered error without
+		//		data loss.
+		return
+	}
+
+	md, _, err := SignalFxV2ToMetricsData(r.logger, msg.Datapoints)
 	// TODO: add observability metrics
 	if err != nil {
 		// Assume that any error is for the whole request.
@@ -158,6 +177,7 @@ func (r *sfxReceiver) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			fmt.Sprintf(
 				"Failed to convert SignalFx metric to internal format: %s",
 				err.Error()))
+		return
 	}
 
 	err = r.nextConsumer.ConsumeMetricsData(req.Context(), *md)
@@ -166,7 +186,13 @@ func (r *sfxReceiver) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			resp,
 			http.StatusInternalServerError,
 			err.Error())
+		return
 	}
+
+	r.writeResponse(
+		resp,
+		http.StatusAccepted,
+		"OK")
 }
 
 func (r *sfxReceiver) writeResponse(

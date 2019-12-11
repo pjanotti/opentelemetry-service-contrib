@@ -74,5 +74,5 @@ func (f *Factory) CreateMetricsReceiver(
 ) (receiver.MetricsReceiver, error) {
 
 	rCfg := cfg.(*Config)
-	return New(rCfg, consumer)
+	return New(logger, rCfg, consumer)
 }

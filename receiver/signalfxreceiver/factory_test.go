@@ -16,11 +16,11 @@ package signalfxreceiver
 
 import (
 	"context"
-	"github.com/open-telemetry/opentelemetry-collector/consumer"
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-collector/config/configcheck"
 	"github.com/open-telemetry/opentelemetry-collector/config/configerror"
+	"github.com/open-telemetry/opentelemetry-collector/consumer"
 	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -50,7 +50,7 @@ func TestCreateReceiver(t *testing.T) {
 	assert.Nil(t, err, "receiver creation failed")
 	assert.NotNil(t, tReceiver, "receiver creation failed")
 
-	tReceiver, err = factory.CreateMetricsReceiver( zap.NewNop(), cfg, &mockMetricsConsumer{})
+	tReceiver, err = factory.CreateMetricsReceiver(zap.NewNop(), cfg, &mockMetricsConsumer{})
 	assert.Nil(t, err, "receiver creation failed")
 	assert.NotNil(t, tReceiver, "receiver creation failed")
 

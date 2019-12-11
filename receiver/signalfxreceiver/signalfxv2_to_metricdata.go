@@ -15,6 +15,9 @@
 package signalfxreceiver
 
 import (
+	"errors"
+	"fmt"
+
 	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
@@ -22,27 +25,61 @@ import (
 	"go.uber.org/zap"
 )
 
-func metricDataToSignalFxV2(
+var (
+	errSFxNilDatum                   = errors.New("nil datum value for data-point")
+	errSFxMetricTypeEnumNotSupported = errors.New("data-point of MetricType_ENUM type is not supported")
+
+	errSFxUnexpectedInt64DatumType   = errors.New("datum value type of int64 is unexpected")
+	errSFxUnexpectedFloat64DatumType = errors.New("datum value type of float64 is unexpected")
+	errSFxUnexpectedStringDatumType  = errors.New("datum value type of string is unexpected")
+	errSFxNoDatumValue               = errors.New("no datum value present for data-point")
+)
+
+// SignalFxV2ToMetricsData converts SignalFx proto data points to
+// consumerdata.MetricsData. Returning the converted data, number of dropped
+// timeseries, and error (if any happens during the conversion).
+func SignalFxV2ToMetricsData(
 	logger *zap.Logger,
 	sfxDataPoints []*sfxpb.DataPoint,
 ) (*consumerdata.MetricsData, int, error) {
 
 	// TODO: not optimized at all, basically regenerating everything for each
 	// 	data point.
-
-	md := &consumerdata.MetricsData{
-		Node:     nil, // TODO: Add this instance itself? Leave it to a future Processor?
-		Resource: nil, // TODO: likely do nothing since Resources are injected via processors
-	}
+	numDroppedTimeSeries := 0
+	md := &consumerdata.MetricsData{}
 	metrics := make([]*metricspb.Metric, 0, len(sfxDataPoints))
 	for _, sfxDataPoint := range sfxDataPoints {
+		if sfxDataPoint == nil {
+			// TODO: Log or metric for this odd ball?
+			continue
+		}
+
+		// First check if the type is convertible and the data point is consistent.
+		metricType, err := convertType(sfxDataPoint)
+		if err != nil {
+			numDroppedTimeSeries++
+			logger.Debug("SignalFx data-point type conversion error",
+				zap.Error(err),
+				zap.String("metric", sfxDataPoint.GetMetric()))
+			continue
+		}
+		point, err := buildPoint(sfxDataPoint, metricType)
+		if err != nil {
+			numDroppedTimeSeries++
+			logger.Debug("SignalFx data-point datum conversion error",
+				zap.Error(err),
+				zap.String("metric", sfxDataPoint.GetMetric()))
+			continue
+		}
+
 		labelKeys, labelValues := buildLabelKeysAndValues(sfxDataPoint.Dimensions)
-		descriptor := buildDescriptor(sfxDataPoint, labelKeys) // TODO: add way to account for dropped timeseries
-		point := buildPoint(sfxDataPoint)
+		descriptor := buildDescriptor(sfxDataPoint, labelKeys, metricType)
 		ts := &metricspb.TimeSeries{
-			StartTimestamp: nil, // TODO: for cumulative this is relevant but doesn't seem to have any info on data point
-			LabelValues:    labelValues,
-			Points:         []*metricspb.Point{point},
+			// TODO: StartTimestamp can be set if each cumulative time series are
+			//  	tracked but right now it is not clear if it brings benefits.
+			//		Perhaps as an option so cost is "pay for play".
+			LabelValues: labelValues,
+			Points:      []*metricspb.Point{point},
 		}
 		metric := &metricspb.Metric{
 			MetricDescriptor: descriptor,
@@ -52,74 +89,18 @@ func metricDataToSignalFxV2(
 	}
 
 	md.Metrics = metrics
-	return md, 0, nil
+	return md, numDroppedTimeSeries, nil
 }
 
-func buildPoint(sfxDataPoint *sfxpb.DataPoint) *metricspb.Point {
-	if sfxDataPoint.Value == nil {
-		// TODO: handle nil Datum case
-		panic("TODO: handle nil Datum case")
-	}
-
-	p := &metricspb.Point{
-		Timestamp: convertTimestamp(sfxDataPoint.GetTimestamp()),
-	}
-
-	switch {
-	case sfxDataPoint.Value.IntValue != nil:
-		p.Value = &metricspb.Point_Int64Value{Int64Value: *sfxDataPoint.Value.IntValue}
-	case sfxDataPoint.Value.DoubleValue != nil:
-		p.Value = &metricspb.Point_DoubleValue{DoubleValue: *sfxDataPoint.Value.DoubleValue}
-	case sfxDataPoint.Value.StrValue != nil:
-		// TODO: Ensure that this is properly handled.
-		panic("TODO: sfxDataPoint.Value.StrValue != nil")
-	default:
-		// TODO: handle unexpected case
-		panic("TODO: unknown datum type")
-	}
-
-	return p
-}
-
-func convertTimestamp(msec int64) *timestamp.Timestamp {
-	if msec == 0 {
-		return nil
-	}
-
-	ts := &timestamp.Timestamp{
-		Seconds: msec / 1e3,
-		Nanos:   (msec % 1e3) * 1e3,
-	}
-	return ts
-}
-
-func buildDescriptor(
+func convertType(
 	sfxDataPoint *sfxpb.DataPoint,
-	labelKeys []*metricspb.LabelKey,
-) *metricspb.MetricDescriptor {
-
-	// TODO: Initially create this every single one and do not worry about
-	// caching.
-	descriptor := &metricspb.MetricDescriptor{
-		Name:        *sfxDataPoint.Metric,
-		Description: "", // TODO: Anything to go here?
-		Unit:        "", // TODO: Anything to go here?
-		Type:        convertType(sfxDataPoint),
-		LabelKeys:   labelKeys,
-	}
-
-	return descriptor
-}
-
-func convertType(sfxDataPoint *sfxpb.DataPoint) metricspb.MetricDescriptor_Type {
-	var descType metricspb.MetricDescriptor_Type
+) (descType metricspb.MetricDescriptor_Type, err error) {
 
 	// Combine metric type with the actual data point type
-	sfxMetricType := *sfxDataPoint.MetricType
+	sfxMetricType := sfxDataPoint.GetMetricType()
 	sfxDatum := sfxDataPoint.Value
-	if sfxDatum.StrValue != nil {
-		// TODO: count as dropped metric?
-		panic("TODO: not supported")
+	if sfxDatum == nil {
+		return descType, errSFxNilDatum
 	}
 
 	switch sfxMetricType {
@@ -144,15 +125,84 @@ func convertType(sfxDataPoint *sfxpb.DataPoint) metricspb.MetricDescriptor_Type 
 	case sfxpb.MetricType_ENUM:
 		// String: Used for non-continuous quantities (that is, measurements where there is a fixed
 		// set of meaningful values). This is essentially a special case of gauge.
-		// TODO: any way in OC to support this? Likely log and count as dropped timeseries
-		panic("TODO: any way to support this")
+		// TODO: add a way to support this type?
+		err = errSFxMetricTypeEnumNotSupported
 
 	default:
-		// TODO: handle any metric type
-		panic("TODO: handle unknown sfxMetricType")
+		err = fmt.Errorf("unknown data-point type (%d)", sfxMetricType)
 	}
 
-	return descType
+	return descType, err
+}
+
+func buildPoint(
+	sfxDataPoint *sfxpb.DataPoint,
+	expectedMetricType metricspb.MetricDescriptor_Type,
+) (*metricspb.Point, error) {
+	if sfxDataPoint.Value == nil {
+		return nil, errSFxNilDatum
+	}
+
+	p := &metricspb.Point{
+		Timestamp: convertTimestamp(sfxDataPoint.GetTimestamp()),
+	}
+
+	switch {
+	case sfxDataPoint.Value.IntValue != nil:
+		mismatch := expectedMetricType != metricspb.MetricDescriptor_CUMULATIVE_INT64 &&
+			expectedMetricType != metricspb.MetricDescriptor_GAUGE_INT64
+		if mismatch {
+			return nil, errSFxUnexpectedInt64DatumType
+		}
+		p.Value = &metricspb.Point_Int64Value{Int64Value: *sfxDataPoint.Value.IntValue}
+
+	case sfxDataPoint.Value.DoubleValue != nil:
+		mismatch := expectedMetricType != metricspb.MetricDescriptor_CUMULATIVE_DOUBLE &&
+			expectedMetricType != metricspb.MetricDescriptor_GAUGE_DOUBLE
+		if mismatch {
+			return nil, errSFxUnexpectedFloat64DatumType
+		}
+		p.Value = &metricspb.Point_DoubleValue{DoubleValue: *sfxDataPoint.Value.DoubleValue}
+
+	case sfxDataPoint.Value.StrValue != nil:
+		return nil, errSFxUnexpectedStringDatumType
+
+	default:
+		return nil, errSFxNoDatumValue
+	}
+
+	return p, nil
+}
+
+func convertTimestamp(msec int64) *timestamp.Timestamp {
+	if msec == 0 {
+		return nil
+	}
+
+	ts := &timestamp.Timestamp{
+		Seconds: msec / 1e3,
+		Nanos:   int32(msec%1e3) * 1e3,
+	}
+	return ts
+}
+
+func buildDescriptor(
+	sfxDataPoint *sfxpb.DataPoint,
+	labelKeys []*metricspb.LabelKey,
+	metricType metricspb.MetricDescriptor_Type,
+) *metricspb.MetricDescriptor {
+
+	// TODO: Evaluate performance impact with different datasets to see if it
+	//  is worth to cache these.
+	descriptor := &metricspb.MetricDescriptor{
+		Name: sfxDataPoint.GetMetric(),
+		// Description: no value to go here
+		// Unit:        no value to go here
+		Type:      metricType,
+		LabelKeys: labelKeys,
+	}
+
+	return descriptor
 }
 
 func buildLabelKeysAndValues(
@@ -161,6 +211,10 @@ func buildLabelKeysAndValues(
 	keys := make([]*metricspb.LabelKey, 0, len(dimensions))
 	values := make([]*metricspb.LabelValue, 0, len(dimensions))
 	for _, dim := range dimensions {
+		if dim == nil {
+			// TODO: Log or metric this odd ball
+			continue
+		}
 		lk := &metricspb.LabelKey{Key: *dim.Key}
 		keys = append(keys, lk)
 
