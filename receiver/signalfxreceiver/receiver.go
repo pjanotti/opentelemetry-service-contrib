@@ -15,6 +15,7 @@
 package signalfxreceiver
 
 import (
+	"compress/gzip"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -91,7 +92,7 @@ func New(
 	}
 
 	mux := mux.NewRouter()
-	mux.HandleFunc("v2/datapoint", r.handleReq)
+	mux.HandleFunc("/v2/datapoint", r.handleReq)
 	r.server.Handler = mux
 
 	return r, nil
@@ -130,6 +131,7 @@ const (
 	responseInvalidMethod      = "Only \"POST\" method is supported"
 	responseInvalidContentType = "\"Content-Type\" must be \"application/x-protobuf\""
 	responseInvalidEncoding    = "\"Content-Encoding\" must be \"gzip\" or empty"
+	responseErrGzipReader      = "Error on gzip body"
 	responseErrReadBody        = "Failed to read message body"
 	responseErrUnmarshalBody   = "Failed to unmarshal message body"
 	responseErrNextConsumer    = "Internal Server Error"
@@ -164,7 +166,21 @@ func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(req.Body)
+	var err error
+	bodyReader := req.Body
+	if encoding == "gzip" {
+		bodyReader, err = gzip.NewReader(bodyReader)
+		if err != nil {
+			r.writeResponse(
+				resp,
+				http.StatusBadRequest,
+				responseErrGzipReader,
+				err)
+			return
+		}
+	}
+
+	body, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		r.writeResponse(
 			resp,
@@ -173,10 +189,6 @@ func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 			err)
 		return
 	}
-
-	//if encoding == "gzip" {
-	//	// TODO: decompress before unmarshal
-	//}
 
 	msg := &sfxpb.DataPointUploadMessage{}
 	if err := proto.Unmarshal(body, msg); err != nil {

@@ -181,7 +181,7 @@ func convertTimestamp(msec int64) *timestamp.Timestamp {
 
 	ts := &timestamp.Timestamp{
 		Seconds: msec / 1e3,
-		Nanos:   int32(msec%1e3) * 1e3,
+		Nanos:   int32(msec%1e3) * 1e6,
 	}
 	return ts
 }

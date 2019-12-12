@@ -16,24 +16,36 @@ package signalfxreceiver
 
 import (
 	"bytes"
+	"compress/gzip"
+	"context"
 	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 	"time"
 
+	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 	"github.com/golang/protobuf/proto"
 	"github.com/open-telemetry/opentelemetry-collector/config/configmodels"
 	"github.com/open-telemetry/opentelemetry-collector/consumer"
+	"github.com/open-telemetry/opentelemetry-collector/consumer/consumerdata"
 	"github.com/open-telemetry/opentelemetry-collector/exporter/exportertest"
+	"github.com/open-telemetry/opentelemetry-collector/oterr"
+	"github.com/open-telemetry/opentelemetry-collector/receiver/receivertest"
+	"github.com/open-telemetry/opentelemetry-collector/testutils"
+	"github.com/open-telemetry/opentelemetry-collector/testutils/metricstestutils"
 	sfxpb "github.com/signalfx/com_signalfx_metrics_protobuf"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter"
 )
 
-func TestNew(t *testing.T) {
+func Test_signalfxeceiver_New(t *testing.T) {
 	defaultConfig := (&Factory{}).CreateDefaultConfig().(*Config)
 	type args struct {
 		config       Config
@@ -84,9 +96,87 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func Test_signalfxeceiver_EndToEnd(t *testing.T) {
+	addr := testutils.GetAvailableLocalAddress(t)
+	cfg := (&Factory{}).CreateDefaultConfig().(*Config)
+	cfg.Endpoint = addr
+	sink := new(exportertest.SinkMetricsExporter)
+	r, err := New(zap.NewNop(), *cfg, sink)
+	require.NoError(t, err)
+
+	mh := receivertest.NewMockHost()
+	err = r.StartMetricsReception(mh)
+	require.NoError(t, err)
+	runtime.Gosched()
+	defer r.StopMetricsReception()
+	require.Equal(t, oterr.ErrAlreadyStarted, r.StartMetricsReception(mh))
+
+	unixSecs := int64(1574092046)
+	unixNSecs := int64(11 * time.Millisecond)
+	tsUnix := time.Unix(unixSecs, unixNSecs)
+	doubleVal := 1234.5678
+	doublePt := metricstestutils.Double(tsUnix, doubleVal)
+	int64Val := int64(123)
+	int64Pt := &metricspb.Point{
+		Timestamp: metricstestutils.Timestamp(tsUnix),
+		Value:     &metricspb.Point_Int64Value{Int64Value: int64Val},
+	}
+	want := consumerdata.MetricsData{
+		Metrics: []*metricspb.Metric{
+			metricstestutils.Gauge("gauge_double_with_dims", nil, metricstestutils.Timeseries(tsUnix, nil, doublePt)),
+			metricstestutils.GaugeInt("gauge_int_with_dims", nil, metricstestutils.Timeseries(tsUnix, nil, int64Pt)),
+			metricstestutils.Cumulative("cumulative_double_with_dims", nil, metricstestutils.Timeseries(tsUnix, nil, doublePt)),
+			metricstestutils.CumulativeInt("cumulative_int_with_dims", nil, metricstestutils.Timeseries(tsUnix, nil, int64Pt)),
+		},
+	}
+
+	expCfg := &signalfxexporter.Config{
+		URL: "http://" + addr + "/v2/datapoint",
+	}
+	exp, err := signalfxexporter.New(expCfg, zap.NewNop())
+	require.NoError(t, err)
+	require.NoError(t, exp.Start(mh))
+	defer exp.Shutdown()
+	require.NoError(t, exp.ConsumeMetricsData(context.Background(), want))
+	// Description, unit and start time are expected to be dropped during conversions.
+	for _, metric := range want.Metrics {
+		metric.MetricDescriptor.Description = ""
+		metric.MetricDescriptor.Unit = ""
+		for _, ts := range metric.Timeseries {
+			ts.StartTimestamp = nil
+		}
+	}
+
+	got := sink.AllMetrics()
+	require.Equal(t, 1, len(got))
+	assert.Equal(t, want, got[0])
+
+	assert.NoError(t, r.StopMetricsReception())
+	assert.Equal(t, oterr.ErrAlreadyStopped, r.StopMetricsReception())
+}
+
 func Test_sfxReceiver_handleReq(t *testing.T) {
 	config := (&Factory{}).CreateDefaultConfig().(*Config)
 	config.Endpoint = "localhost:0" // Actually not creating the endpoint
+
+	buildSFxMsgFn := func() *sfxpb.DataPointUploadMessage {
+		return &sfxpb.DataPointUploadMessage{
+			Datapoints: []*sfxpb.DataPoint{
+				{
+					Metric: strPtr("single"),
+					Timestamp: func() *int64 {
+						l := time.Now().Unix() * 1e3
+						return &l
+					}(),
+					Value: &sfxpb.Datum{
+						IntValue: int64Ptr(13),
+					},
+					MetricType: sfxTypePtr(sfxpb.MetricType_GAUGE),
+					Dimensions: buildNDimensions(3),
+				},
+			},
+		}
+	}
 
 	tests := []struct {
 		name           string
@@ -166,26 +256,9 @@ func Test_sfxReceiver_handleReq(t *testing.T) {
 		{
 			name: "msg_accepted",
 			req: func() *http.Request {
-				sfxMsg := &sfxpb.DataPointUploadMessage{
-					Datapoints: []*sfxpb.DataPoint{
-						{
-							Metric: strPtr("single"),
-							Timestamp: func() *int64 {
-								l := time.Now().Unix() * 1e3
-								return &l
-							}(),
-							Value: &sfxpb.Datum{
-								IntValue: int64Ptr(13),
-							},
-							MetricType: sfxTypePtr(sfxpb.MetricType_GAUGE),
-							Dimensions: buildNDimensions(3),
-						},
-					},
-				}
+				sfxMsg := buildSFxMsgFn()
 				msgBytes, err := proto.Marshal(sfxMsg)
-				if err != nil {
-					panic(err)
-				}
+				require.NoError(t, err)
 				req := httptest.NewRequest("POST", "http://localhost", bytes.NewReader(msgBytes))
 				req.Header.Set("Content-Type", "application/x-protobuf")
 				return req
@@ -193,6 +266,46 @@ func Test_sfxReceiver_handleReq(t *testing.T) {
 			assertResponse: func(t *testing.T, status int, body string) {
 				assert.Equal(t, http.StatusAccepted, status)
 				assert.Equal(t, "", body)
+			},
+		},
+		{
+			name: "msg_accepted_gzipped",
+			req: func() *http.Request {
+				sfxMsg := buildSFxMsgFn()
+				msgBytes, err := proto.Marshal(sfxMsg)
+				require.NoError(t, err)
+
+				var buf bytes.Buffer
+				gzipWriter := gzip.NewWriter(&buf)
+				_, err = gzipWriter.Write(msgBytes)
+				require.NoError(t, err)
+				require.NoError(t, gzipWriter.Close())
+
+				req := httptest.NewRequest("POST", "http://localhost", &buf)
+				req.Header.Set("Content-Type", "application/x-protobuf")
+				req.Header.Set("Content-Encoding", "gzip")
+				return req
+			}(),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusAccepted, status)
+				assert.Equal(t, "", body)
+			},
+		},
+		{
+			name: "bad_gzipped_msg",
+			req: func() *http.Request {
+				sfxMsg := buildSFxMsgFn()
+				msgBytes, err := proto.Marshal(sfxMsg)
+				require.NoError(t, err)
+
+				req := httptest.NewRequest("POST", "http://localhost", bytes.NewReader(msgBytes))
+				req.Header.Set("Content-Type", "application/x-protobuf")
+				req.Header.Set("Content-Encoding", "gzip")
+				return req
+			}(),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusBadRequest, status)
+				assert.Equal(t, responseErrGzipReader, body)
 			},
 		},
 	}
@@ -215,6 +328,8 @@ func Test_sfxReceiver_handleReq(t *testing.T) {
 
 type badReqBody struct{}
 
+var _ io.ReadCloser = (*badReqBody)(nil)
+
 func (b badReqBody) Read(p []byte) (n int, err error) {
 	return 0, errors.New("badReqBody: can't read it")
 }
@@ -222,5 +337,3 @@ func (b badReqBody) Read(p []byte) (n int, err error) {
 func (b badReqBody) Close() error {
 	return nil
 }
-
-var _ io.ReadCloser = (*badReqBody)(nil)
