@@ -25,13 +25,26 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
 	"github.com/open-telemetry/opentelemetry-collector/consumer"
+	"github.com/open-telemetry/opentelemetry-collector/observability"
 	"github.com/open-telemetry/opentelemetry-collector/oterr"
 	"github.com/open-telemetry/opentelemetry-collector/receiver"
+	"github.com/open-telemetry/opentelemetry-collector/translator/conventions"
 	sfxpb "github.com/signalfx/com_signalfx_metrics_protobuf"
+	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 )
 
-const defaultServerTimeout = 20 * time.Second
+const (
+	defaultServerTimeout = 20 * time.Second
+
+	responseInvalidMethod      = "Only \"POST\" method is supported"
+	responseInvalidContentType = "\"Content-Type\" must be \"application/x-protobuf\""
+	responseInvalidEncoding    = "\"Content-Encoding\" must be \"gzip\" or empty"
+	responseErrGzipReader      = "Error on gzip body"
+	responseErrReadBody        = "Failed to read message body"
+	responseErrUnmarshalBody   = "Failed to unmarshal message body"
+	responseErrNextConsumer    = "Internal Server Error"
+)
 
 var (
 	errNilNextConsumer = errors.New("nil nextConsumer")
@@ -98,6 +111,8 @@ func New(
 	return r, nil
 }
 
+// StartMetricsReception tells the receiver to start its processing.
+// By convention the consumer of the data received is set at creation time.
 func (r *sfxReceiver) StartMetricsReception(host receiver.Host) error {
 	r.Lock()
 	defer r.Unlock()
@@ -116,6 +131,8 @@ func (r *sfxReceiver) StartMetricsReception(host receiver.Host) error {
 	return err
 }
 
+// StopMetricsReception tells the receiver that should stop reception,
+// giving it a chance to perform any necessary clean-up.
 func (r *sfxReceiver) StopMetricsReception() error {
 	r.Lock()
 	defer r.Unlock()
@@ -127,42 +144,25 @@ func (r *sfxReceiver) StopMetricsReception() error {
 	return err
 }
 
-const (
-	responseInvalidMethod      = "Only \"POST\" method is supported"
-	responseInvalidContentType = "\"Content-Type\" must be \"application/x-protobuf\""
-	responseInvalidEncoding    = "\"Content-Encoding\" must be \"gzip\" or empty"
-	responseErrGzipReader      = "Error on gzip body"
-	responseErrReadBody        = "Failed to read message body"
-	responseErrUnmarshalBody   = "Failed to unmarshal message body"
-	responseErrNextConsumer    = "Internal Server Error"
-)
-
 func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
+	// Tracing the request to make it visible via z-pages.
+	reqCtx := req.Context()
+	spanCtx, span := trace.StartSpan(reqCtx, r.config.Name())
+	defer span.End()
+
 	if req.Method != "POST" {
-		r.writeResponse(
-			resp,
-			http.StatusBadRequest,
-			responseInvalidMethod,
-			nil)
+		r.failRequest(resp, http.StatusBadRequest, responseInvalidMethod, nil, span)
 		return
 	}
 
 	if req.Header.Get("Content-Type") != "application/x-protobuf" {
-		r.writeResponse(
-			resp,
-			http.StatusUnsupportedMediaType,
-			responseInvalidContentType,
-			nil)
+		r.failRequest(resp, http.StatusUnsupportedMediaType, responseInvalidContentType, nil, span)
 		return
 	}
 
 	encoding := req.Header.Get("Content-Encoding")
 	if encoding != "" && encoding != "gzip" {
-		r.writeResponse(
-			resp,
-			http.StatusUnsupportedMediaType,
-			responseInvalidEncoding,
-			nil)
+		r.failRequest(resp, http.StatusUnsupportedMediaType, responseInvalidEncoding, nil, span)
 		return
 	}
 
@@ -171,74 +171,58 @@ func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 	if encoding == "gzip" {
 		bodyReader, err = gzip.NewReader(bodyReader)
 		if err != nil {
-			r.writeResponse(
-				resp,
-				http.StatusBadRequest,
-				responseErrGzipReader,
-				err)
+			r.failRequest(resp, http.StatusBadRequest, responseErrGzipReader, err, span)
 			return
 		}
 	}
 
 	body, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
-		r.writeResponse(
-			resp,
-			http.StatusBadRequest,
-			responseErrReadBody,
-			err)
+		r.failRequest(resp, http.StatusBadRequest, responseErrReadBody, err, span)
 		return
 	}
 
 	msg := &sfxpb.DataPointUploadMessage{}
 	if err := proto.Unmarshal(body, msg); err != nil {
-		r.writeResponse(
-			resp,
-			http.StatusBadRequest,
-			responseErrUnmarshalBody,
-			err)
+		r.failRequest(resp, http.StatusBadRequest, responseErrUnmarshalBody, err, span)
 		return
 	}
 
+	recvCtx := observability.ContextWithReceiverName(spanCtx, r.config.Name())
 	if len(msg.Datapoints) == 0 {
-		// TODO: add observability, perhaps should be considered error without
-		//		data loss.
+		observability.RecordMetricsForMetricsReceiver(recvCtx, 0, 0)
 		return
 	}
 
-	md, _ := SignalFxV2ToMetricsData(r.logger, msg.Datapoints)
+	md, numDroppedTimeseries := SignalFxV2ToMetricsData(r.logger, msg.Datapoints)
 
-	err = r.nextConsumer.ConsumeMetricsData(req.Context(), *md)
+	err = r.nextConsumer.ConsumeMetricsData(spanCtx, *md)
 	if err != nil {
-		r.writeResponse(
-			resp,
-			http.StatusInternalServerError,
-			responseErrNextConsumer,
-			err)
+		observability.RecordMetricsForMetricsReceiver(
+			recvCtx,
+			len(msg.Datapoints),
+			len(msg.Datapoints))
+		r.failRequest(resp, http.StatusInternalServerError, responseErrNextConsumer, err, span)
 		return
 	}
 
-	r.writeResponse(
-		resp,
-		http.StatusAccepted,
-		"",
-		nil)
+	observability.RecordMetricsForMetricsReceiver(
+		recvCtx,
+		len(msg.Datapoints),
+		numDroppedTimeseries)
+
+	resp.WriteHeader(http.StatusAccepted)
 }
 
-func (r *sfxReceiver) writeResponse(
+func (r *sfxReceiver) failRequest(
 	resp http.ResponseWriter,
 	httpStatusCode int,
 	msg string,
 	err error,
+	reqSpan *trace.Span,
 ) {
 	resp.WriteHeader(httpStatusCode)
 	if msg != "" {
-		if err == nil {
-			r.logger.Debug(
-				"Incorrect HTTP request",
-				zap.String("msg", msg),
-				zap.String("receiver", r.config.Name()))
-		}
 		_, writeErr := resp.Write([]byte(msg))
 		if writeErr != nil {
 			r.logger.Warn(
@@ -247,10 +231,25 @@ func (r *sfxReceiver) writeResponse(
 				zap.String("receiver", r.config.Name()))
 		}
 	}
-	if err != nil {
-		r.logger.Warn(
-			"Error processing HTTP request",
-			zap.Error(err),
-			zap.String("receiver", r.config.Name()))
+
+	reqSpan.AddAttributes(
+		trace.Int64Attribute(conventions.AttributeHTTPStatusCode, int64(httpStatusCode)),
+		trace.StringAttribute(conventions.AttributeHTTPStatusText, msg))
+	traceStatus := trace.Status{
+		Code: trace.StatusCodeInvalidArgument,
 	}
+	if httpStatusCode == http.StatusInternalServerError {
+		traceStatus.Code = trace.StatusCodeInternal
+	}
+	if err != nil {
+		traceStatus.Message = err.Error()
+	}
+	reqSpan.SetStatus(traceStatus)
+
+	r.logger.Warn(
+		"SignalFx receiver request failed",
+		zap.Int("http_status_code", httpStatusCode),
+		zap.String("msg", msg),
+		zap.Error(err), // It handles nil error
+		zap.String("receiver", r.config.Name()))
 }
