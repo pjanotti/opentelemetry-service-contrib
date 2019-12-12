@@ -36,12 +36,12 @@ var (
 )
 
 // SignalFxV2ToMetricsData converts SignalFx proto data points to
-// consumerdata.MetricsData. Returning the converted data, number of dropped
-// timeseries, and error (if any happens during the conversion).
+// consumerdata.MetricsData. Returning the converted data and the number of
+// dropped time series.
 func SignalFxV2ToMetricsData(
 	logger *zap.Logger,
 	sfxDataPoints []*sfxpb.DataPoint,
-) (*consumerdata.MetricsData, int, error) {
+) (*consumerdata.MetricsData, int) {
 
 	// TODO: not optimized at all, basically regenerating everything for each
 	// 	data point.
@@ -89,7 +89,7 @@ func SignalFxV2ToMetricsData(
 	}
 
 	md.Metrics = metrics
-	return md, numDroppedTimeSeries, nil
+	return md, numDroppedTimeSeries
 }
 
 func convertType(

@@ -87,7 +87,6 @@ func Test_signalFxV2ToMetricsData(t *testing.T) {
 		sfxDataPoints         []*sfxpb.DataPoint
 		wantMetricsData       *consumerdata.MetricsData
 		wantDroppedTimeseries int
-		wantErr               bool
 	}{
 		{
 			name:            "int_gauge",
@@ -216,14 +215,9 @@ func Test_signalFxV2ToMetricsData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			md, numDroppedTimeseries, err := SignalFxV2ToMetricsData(zap.NewNop(), tt.sfxDataPoints)
+			md, numDroppedTimeseries := SignalFxV2ToMetricsData(zap.NewNop(), tt.sfxDataPoints)
 			assert.Equal(t, tt.wantMetricsData, md)
 			assert.Equal(t, tt.wantDroppedTimeseries, numDroppedTimeseries)
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
 		})
 	}
 }

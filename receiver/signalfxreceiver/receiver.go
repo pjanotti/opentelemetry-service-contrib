@@ -16,7 +16,6 @@ package signalfxreceiver
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -31,8 +30,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const defaultServerTimeout = 20 * time.Second
+
 var (
 	errNilNextConsumer = errors.New("nil nextConsumer")
+	errEmptyEndpoint   = errors.New("empty endpoint")
 )
 
 // sfxReceiver implements the receiver.TraceReceiver for Zipkin Scribe protocol.
@@ -52,6 +54,47 @@ var _ receiver.MetricsReceiver = (*sfxReceiver)(nil)
 func (r *sfxReceiver) MetricsSource() string {
 	const metricsSource string = "SignalFx"
 	return metricsSource
+}
+
+// New creates the SignalFx receiver with the given configuration.
+func New(
+	logger *zap.Logger,
+	config Config,
+	nextConsumer consumer.MetricsConsumer,
+) (receiver.MetricsReceiver, error) {
+
+	if nextConsumer == nil {
+		return nil, errNilNextConsumer
+	}
+
+	if config.Endpoint == "" {
+		return nil, errEmptyEndpoint
+	}
+
+	// Handle config zero values.
+	if config.Name() == "" {
+		config.SetType(typeStr)
+		config.SetName(typeStr)
+	}
+
+	r := &sfxReceiver{
+		logger:       logger,
+		config:       &config,
+		nextConsumer: nextConsumer,
+		server: &http.Server{
+			Addr: config.Endpoint,
+			// TODO: Evaluate what properties should be configurable, for now
+			//		set some hard-coded values.
+			ReadHeaderTimeout: defaultServerTimeout,
+			WriteTimeout:      defaultServerTimeout,
+		},
+	}
+
+	mux := mux.NewRouter()
+	mux.HandleFunc("v2/datapoint", r.handleReq)
+	r.server.Handler = mux
+
+	return r, nil
 }
 
 func (r *sfxReceiver) StartMetricsReception(host receiver.Host) error {
@@ -83,42 +126,22 @@ func (r *sfxReceiver) StopMetricsReception() error {
 	return err
 }
 
-// New creates the SignalFx receiver with the given configuration.
-func New(
-	logger *zap.Logger,
-	config *Config,
-	nextConsumer consumer.MetricsConsumer) (receiver.MetricsReceiver, error) {
-
-	if nextConsumer == nil {
-		return nil, errNilNextConsumer
-	}
-
-	r := &sfxReceiver{
-		logger:       logger,
-		config:       config,
-		nextConsumer: nextConsumer,
-		server: &http.Server{
-			Addr: config.Endpoint,
-			// TODO: Evaluate what properties should be configurable, for now
-			//		set some hard-coded values.
-			ReadHeaderTimeout: 20 * time.Second,
-			WriteTimeout:      20 * time.Second,
-		},
-	}
-
-	mux := mux.NewRouter()
-	mux.HandleFunc("v2/datapoint", r.handleReq)
-	r.server.Handler = mux
-
-	return r, nil
-}
+const (
+	responseInvalidMethod      = "Only \"POST\" method is supported"
+	responseInvalidContentType = "\"Content-Type\" must be \"application/x-protobuf\""
+	responseInvalidEncoding    = "\"Content-Encoding\" must be \"gzip\" or empty"
+	responseErrReadBody        = "Failed to read message body"
+	responseErrUnmarshalBody   = "Failed to unmarshal message body"
+	responseErrNextConsumer    = "Internal Server Error"
+)
 
 func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		r.writeResponse(
 			resp,
 			http.StatusBadRequest,
-			"Only \"POST\" method is supported")
+			responseInvalidMethod,
+			nil)
 		return
 	}
 
@@ -126,7 +149,8 @@ func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 		r.writeResponse(
 			resp,
 			http.StatusUnsupportedMediaType,
-			"\"Content-Type\" must be \"application/x-protobuf\"")
+			responseInvalidContentType,
+			nil)
 		return
 	}
 
@@ -135,7 +159,8 @@ func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 		r.writeResponse(
 			resp,
 			http.StatusUnsupportedMediaType,
-			"\"Content-Encoding\" must be \"gzip\" or empty")
+			responseInvalidEncoding,
+			nil)
 		return
 	}
 
@@ -144,12 +169,13 @@ func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 		r.writeResponse(
 			resp,
 			http.StatusBadRequest,
-			"Failed to read message body")
+			responseErrReadBody,
+			err)
 		return
 	}
 
 	//if encoding == "gzip" {
-	//	// TODO: decompress before unmarshall
+	//	// TODO: decompress before unmarshal
 	//}
 
 	msg := &sfxpb.DataPointUploadMessage{}
@@ -157,7 +183,8 @@ func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 		r.writeResponse(
 			resp,
 			http.StatusBadRequest,
-			"Failed to unmarshal message body")
+			responseErrUnmarshalBody,
+			err)
 		return
 	}
 
@@ -167,47 +194,51 @@ func (r *sfxReceiver) handleReq(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	md, _, err := SignalFxV2ToMetricsData(r.logger, msg.Datapoints)
-	// TODO: add observability metrics
-	if err != nil {
-		// Assume that any error is for the whole request.
-		r.writeResponse(
-			resp,
-			http.StatusBadRequest,
-			fmt.Sprintf(
-				"Failed to convert SignalFx metric to internal format: %s",
-				err.Error()))
-		return
-	}
+	md, _ := SignalFxV2ToMetricsData(r.logger, msg.Datapoints)
 
 	err = r.nextConsumer.ConsumeMetricsData(req.Context(), *md)
 	if err != nil {
 		r.writeResponse(
 			resp,
 			http.StatusInternalServerError,
-			err.Error())
+			responseErrNextConsumer,
+			err)
 		return
 	}
 
 	r.writeResponse(
 		resp,
 		http.StatusAccepted,
-		"OK")
+		"",
+		nil)
 }
 
 func (r *sfxReceiver) writeResponse(
 	resp http.ResponseWriter,
 	httpStatusCode int,
 	msg string,
+	err error,
 ) {
 	resp.WriteHeader(httpStatusCode)
 	if msg != "" {
-		_, err := resp.Write([]byte(msg))
-		if err != nil {
-			r.logger.Warn(
-				"Error writing HTTP response message",
-				zap.Error(err),
+		if err == nil {
+			r.logger.Debug(
+				"Incorrect HTTP request",
+				zap.String("msg", msg),
 				zap.String("receiver", r.config.Name()))
 		}
+		_, writeErr := resp.Write([]byte(msg))
+		if writeErr != nil {
+			r.logger.Warn(
+				"Error writing HTTP response message",
+				zap.Error(writeErr),
+				zap.String("receiver", r.config.Name()))
+		}
+	}
+	if err != nil {
+		r.logger.Warn(
+			"Error processing HTTP request",
+			zap.Error(err),
+			zap.String("receiver", r.config.Name()))
 	}
 }

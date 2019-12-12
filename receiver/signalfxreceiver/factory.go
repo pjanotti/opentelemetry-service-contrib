@@ -35,6 +35,8 @@ const (
 type Factory struct {
 }
 
+var _ receiver.Factory = (*Factory)(nil)
+
 // Type gets the type of the Receiver config created by this factory.
 func (f *Factory) Type() string {
 	return typeStr
@@ -74,5 +76,5 @@ func (f *Factory) CreateMetricsReceiver(
 ) (receiver.MetricsReceiver, error) {
 
 	rCfg := cfg.(*Config)
-	return New(logger, rCfg, consumer)
+	return New(logger, *rCfg, consumer)
 }

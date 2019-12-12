@@ -14,4 +14,213 @@
 
 package signalfxreceiver
 
-// TODO: Implement tests.
+import (
+	"bytes"
+	"errors"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/open-telemetry/opentelemetry-collector/config/configmodels"
+	"github.com/open-telemetry/opentelemetry-collector/consumer"
+	"github.com/open-telemetry/opentelemetry-collector/exporter/exportertest"
+	sfxpb "github.com/signalfx/com_signalfx_metrics_protobuf"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+)
+
+func TestNew(t *testing.T) {
+	defaultConfig := (&Factory{}).CreateDefaultConfig().(*Config)
+	type args struct {
+		config       Config
+		nextConsumer consumer.MetricsConsumer
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr error
+	}{
+		{
+			name: "nil_nextConsumer",
+			args: args{
+				config: *defaultConfig,
+			},
+			wantErr: errNilNextConsumer,
+		},
+		{
+			name: "empty_endpoint",
+			args: args{
+				config:       *defaultConfig,
+				nextConsumer: new(exportertest.SinkMetricsExporter),
+			},
+			wantErr: errEmptyEndpoint,
+		},
+		{
+			name: "happy_path",
+			args: args{
+				config: Config{
+					ReceiverSettings: configmodels.ReceiverSettings{
+						Endpoint: "localhost:1234",
+					},
+				},
+				nextConsumer: new(exportertest.SinkMetricsExporter),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := New(zap.NewNop(), tt.args.config, tt.args.nextConsumer)
+			assert.Equal(t, tt.wantErr, err)
+			if err == nil {
+				assert.NotNil(t, got)
+			} else {
+				assert.Nil(t, got)
+			}
+		})
+	}
+}
+
+func Test_sfxReceiver_handleReq(t *testing.T) {
+	config := (&Factory{}).CreateDefaultConfig().(*Config)
+	config.Endpoint = "localhost:0" // Actually not creating the endpoint
+
+	tests := []struct {
+		name           string
+		req            *http.Request
+		assertResponse func(t *testing.T, status int, body string)
+	}{
+		{
+			name: "incorrect_method",
+			req:  httptest.NewRequest("PUT", "http://localhost", nil),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusBadRequest, status)
+				assert.Equal(t, responseInvalidMethod, body)
+			},
+		},
+		{
+			name: "incorrect_content_type",
+			req: func() *http.Request {
+				req := httptest.NewRequest("POST", "http://localhost", nil)
+				req.Header.Set("Content-Type", "application/not-protobuf")
+				return req
+			}(),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusUnsupportedMediaType, status)
+				assert.Equal(t, responseInvalidContentType, body)
+			},
+		},
+		{
+			name: "incorrect_content_encoding",
+			req: func() *http.Request {
+				req := httptest.NewRequest("POST", "http://localhost", nil)
+				req.Header.Set("Content-Type", "application/x-protobuf")
+				req.Header.Set("Content-Encoding", "superzipper")
+				return req
+			}(),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusUnsupportedMediaType, status)
+				assert.Equal(t, responseInvalidEncoding, body)
+			},
+		},
+		{
+			name: "fail_to_read_body",
+			req: func() *http.Request {
+				req := httptest.NewRequest("POST", "http://localhost", nil)
+				req.Body = badReqBody{}
+				req.Header.Set("Content-Type", "application/x-protobuf")
+				return req
+			}(),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusBadRequest, status)
+				assert.Equal(t, responseErrReadBody, body)
+			},
+		},
+		{
+			name: "bad_data_in_body",
+			req: func() *http.Request {
+				req := httptest.NewRequest("POST", "http://localhost", bytes.NewReader([]byte{1, 2, 3, 4}))
+				req.Header.Set("Content-Type", "application/x-protobuf")
+				return req
+			}(),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusBadRequest, status)
+				assert.Equal(t, responseErrUnmarshalBody, body)
+			},
+		},
+		{
+			name: "empty_body",
+			req: func() *http.Request {
+				req := httptest.NewRequest("POST", "http://localhost", bytes.NewReader(nil))
+				req.Header.Set("Content-Type", "application/x-protobuf")
+				return req
+			}(),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusOK, status)
+				assert.Equal(t, "", body)
+			},
+		},
+		{
+			name: "msg_accepted",
+			req: func() *http.Request {
+				sfxMsg := &sfxpb.DataPointUploadMessage{
+					Datapoints: []*sfxpb.DataPoint{
+						{
+							Metric: strPtr("single"),
+							Timestamp: func() *int64 {
+								l := time.Now().Unix() * 1e3
+								return &l
+							}(),
+							Value: &sfxpb.Datum{
+								IntValue: int64Ptr(13),
+							},
+							MetricType: sfxTypePtr(sfxpb.MetricType_GAUGE),
+							Dimensions: buildNDimensions(3),
+						},
+					},
+				}
+				msgBytes, err := proto.Marshal(sfxMsg)
+				if err != nil {
+					panic(err)
+				}
+				req := httptest.NewRequest("POST", "http://localhost", bytes.NewReader(msgBytes))
+				req.Header.Set("Content-Type", "application/x-protobuf")
+				return req
+			}(),
+			assertResponse: func(t *testing.T, status int, body string) {
+				assert.Equal(t, http.StatusAccepted, status)
+				assert.Equal(t, "", body)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sink := new(exportertest.SinkMetricsExporter)
+			rcv, err := New(zap.NewNop(), *config, sink)
+			assert.NoError(t, err)
+			r := rcv.(*sfxReceiver)
+			w := httptest.NewRecorder()
+			r.handleReq(w, tt.req)
+			resp := w.Result()
+			bytes, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+			tt.assertResponse(t, resp.StatusCode, string(bytes))
+		})
+	}
+}
+
+type badReqBody struct{}
+
+func (b badReqBody) Read(p []byte) (n int, err error) {
+	return 0, errors.New("badReqBody: can't read it")
+}
+
+func (b badReqBody) Close() error {
+	return nil
+}
+
+var _ io.ReadCloser = (*badReqBody)(nil)
