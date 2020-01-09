@@ -38,6 +38,15 @@ func TestMetric10kDPS(t *testing.T) {
 			},
 		},
 		{
+			"SFx-Gateway",
+			NewSFxMetricDataSender(4343),
+			NewSFxGatewayDataReceiver(4343),
+			testbed.ResourceSpec{
+				ExpectedMaxCPU: 48,
+				ExpectedMaxRAM: 52,
+			},
+		},
+		{
 			"OpenCensus",
 			testbed.NewOCMetricDataSender(testbed.GetAvailablePort(t)),
 			testbed.NewOCDataReceiver(testbed.GetAvailablePort(t)),

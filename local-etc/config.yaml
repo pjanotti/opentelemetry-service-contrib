@@ -1,0 +1,15 @@
+receivers:
+  signalfx:
+    endpoint: localhost:4343
+
+exporters:
+  logging:
+  signalfx:
+    realm: us1
+    access_token: "7ETY_sNpa9AwgAOu_tPp6g"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [signalfx]
+      exporters: [signalfx, logging]
