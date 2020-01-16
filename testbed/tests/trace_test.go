@@ -60,6 +60,7 @@ func TestTrace10kSPS(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			scenarios.Scenario10kItemsPerSecond(
 				t,
+				nil,
 				test.sender,
 				test.receiver,
 				testbed.LoadOptions{},

@@ -15,58 +15,174 @@
 package tests
 
 import (
+	"fmt"
+	"math"
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-collector/testbed/testbed"
 	scenarios "github.com/open-telemetry/opentelemetry-collector/testbed/tests"
 )
 
-func TestMetric10kDPS(t *testing.T) {
-	tests := []struct {
-		name         string
-		sender       testbed.DataSender
-		receiver     testbed.DataReceiver
-		resourceSpec testbed.ResourceSpec
-	}{
+const agentSignalFxReceiverPort = 4343
+const mockBackEndPort = 4344
+
+var testTargets = []struct {
+	name         string
+	senderFactory func(t *testing.T) testbed.DataSender
+	receiverFactory func(t *testing.T) testbed.DataReceiver
+	resourceSpec testbed.ResourceSpec
+	testCaseOpts []testbed.TestCaseOption
+}{
+	{
+		"OpenCensus",
+		func(t *testing.T) testbed.DataSender {
+			return testbed.NewOCMetricDataSender(testbed.GetAvailablePort(t))
+		},
+		func (t *testing.T) testbed.DataReceiver {
+			return testbed.NewOCDataReceiver(testbed.GetAvailablePort(t))
+		},
+		testbed.ResourceSpec{
+			ExpectedMaxCPU: math.MaxUint32,
+			ExpectedMaxRAM: math.MaxUint32,
+		},
+		nil,
+	},
+	{
+		"SignalFx",
+		func(t *testing.T) testbed.DataSender {
+			return NewSFxMetricDataSender(testbed.GetAvailablePort(t))
+		},
+		func (t *testing.T) testbed.DataReceiver {
+			return NewSFxMetricsDataReceiver(testbed.GetAvailablePort(t))
+		},
+		testbed.ResourceSpec{
+			ExpectedMaxCPU: math.MaxUint32,
+			ExpectedMaxRAM: math.MaxUint32,
+		},
+		nil,
+	},
+	{
+		"SFx-Gateway",
+		func(t *testing.T) testbed.DataSender {
+			return NewSFxMetricDataSender(agentSignalFxReceiverPort)
+		},
+		func (t *testing.T) testbed.DataReceiver {
+			return NewSFxMetricsDataReceiver(mockBackEndPort)
+		},
+		testbed.ResourceSpec{
+			ExpectedMaxCPU: math.MaxUint32,
+			ExpectedMaxRAM: math.MaxUint32,
+		},
+		[]testbed.TestCaseOption{
+			testbed.WithCustomAgent(&testbed.StartProcessParams{
+				Name:    "Gateway",
+				Cmd:     "/Users/pj/go/src/github.com/signalfx/gateway/gateway",
+				CmdArgs: []string{"-configfile", "/Users/pj/go/src/github.com/signalfx/gateway/local-etc/gateway.conf"},
+			}),
+		},
+	},
+}
+
+func TestM(t *testing.T) {
+	threeAttribs := map[string]string{
+		"dim0": "value0", "dim1": "value1", "dim2": "value2",
+	}
+	tests := []testbed.LoadOptions{
 		{
-			"SignalFx",
-			NewSFxMetricDataSender(testbed.GetAvailablePort(t)),
-			NewSFxMetricsDataReceiver(testbed.GetAvailablePort(t)),
-			testbed.ResourceSpec{
-				ExpectedMaxCPU: 48,
-				ExpectedMaxRAM: 52,
-			},
+			DataItemsPerSecond: 500,
+			ItemsPerBatch: 100,
+			Attributes: threeAttribs,
 		},
 		{
-			"SFx-Gateway",
-			NewSFxMetricDataSender(4343),
-			NewSFxGatewayDataReceiver(4343),
-			testbed.ResourceSpec{
-				ExpectedMaxCPU: 48,
-				ExpectedMaxRAM: 52,
-			},
+			DataItemsPerSecond: 1000,
+			ItemsPerBatch: 100,
+			Attributes: threeAttribs,
 		},
 		{
-			"OpenCensus",
-			testbed.NewOCMetricDataSender(testbed.GetAvailablePort(t)),
-			testbed.NewOCDataReceiver(testbed.GetAvailablePort(t)),
-			testbed.ResourceSpec{
-				ExpectedMaxCPU: 29,
-				ExpectedMaxRAM: 59,
-			},
+			DataItemsPerSecond: 5000,
+			ItemsPerBatch: 100,
+		},
+		{
+			DataItemsPerSecond: 5000,
+			ItemsPerBatch: 100,
+			Attributes: threeAttribs,
+		},
+		{
+			DataItemsPerSecond: 1e4,
+			ItemsPerBatch: 100,
+		},
+		{
+			DataItemsPerSecond: 1e4,
+			ItemsPerBatch: 100,
+			Attributes: threeAttribs,
 		},
 	}
-
+	args := []string{"--mem-ballast-size-mib", "50"}
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			scenarios.Scenario10kItemsPerSecond(
-				t,
-				test.sender,
-				test.receiver,
-				testbed.LoadOptions{ItemsPerBatch: 100},
-				test.resourceSpec,
-			)
-		})
+		testName := fmt.Sprintf(
+			"DPS(%v)_B(%v)_L(%v)",
+			test.DataItemsPerSecond,
+			test.ItemsPerBatch,
+			len(test.Attributes))
+		for _, target := range testTargets {
+			t.Run(testName + "/" + target.name, func(t *testing.T) {
+				scenarios.Scenario10kItemsPerSecond(
+					t,
+					args,
+					target.senderFactory(t),
+					target.receiverFactory(t),
+					test,
+					target.resourceSpec,
+					target.testCaseOpts...,
+				)
+			})
+		}
 	}
+}
 
+func TestTm(t *testing.T) {
+	fifteenAttribs := map[string]string{
+		"dim0": "value0", "dim1": "value1", "dim2": "value2", "dim3": "value3",
+		"dim4": "value4", "dim5": "value5", "dim6": "value6", "dim7": "value7",
+		"dim8": "value8", "dim9": "value9", "dimA": "valueA", "dimB": "valueB",
+		"dimC": "valueC", "dimD": "valueD", "dimE": "valueE", "dimF": "valueF",
+	}
+	tests := []testbed.LoadOptions{
+		{
+			DataItemsPerSecond: 1e4,
+			ItemsPerBatch: 50,
+			Attributes: fifteenAttribs,
+		},
+		{
+			DataItemsPerSecond: 1e4,
+			ItemsPerBatch: 5000,
+			Attributes: fifteenAttribs,
+		},
+		{
+			DataItemsPerSecond: 2e4,
+			ItemsPerBatch: 5000,
+			Attributes: fifteenAttribs,
+		},
+	}
+	args := []string{"--mem-ballast-size-mib", "50"}
+	for _, test := range tests {
+		testName := fmt.Sprintf(
+			"DPS(%v)_B(%v)_L(%v)",
+			test.DataItemsPerSecond,
+			test.ItemsPerBatch,
+			len(test.Attributes))
+		for _, target := range testTargets {
+			t.Run(testName + "/" + target.name, func(t *testing.T) {
+				scenarios.Scenario10kItemsPerSecond(
+					t,
+					args,
+					target.senderFactory(t),
+					target.receiverFactory(t),
+					test,
+					target.resourceSpec,
+					target.testCaseOpts...,
+				)
+			})
+		}
+	}
 }
