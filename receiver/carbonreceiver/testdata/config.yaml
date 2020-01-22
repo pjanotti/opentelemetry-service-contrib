@@ -1,0 +1,21 @@
+receivers:
+  carbon:
+  carbon/allsettings:
+    # endpoint specifies the network interface and port which will receive
+    # Carbon data.
+    endpoint: localhost:8080
+    transport: udp
+    tcp_idle_timeout: 5s
+
+processors:
+  exampleprocessor:
+
+exporters:
+  exampleexporter:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [carbon, carbon/allsettings]
+      processors: [exampleprocessor]
+      exporters: [exampleexporter]
