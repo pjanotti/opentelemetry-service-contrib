@@ -16,6 +16,7 @@ package carbonreceiver
 
 import (
 	"errors"
+	metricspb "github.com/census-instrumentation/opencensus-proto/gen-go/metrics/v1"
 	"sync"
 
 	"github.com/open-telemetry/opentelemetry-collector/component"
@@ -30,18 +31,25 @@ var (
 	errEmptyEndpoint   = errors.New("empty endpoint")
 )
 
-// sfxReceiver implements the receiver.MetricsReceiver for Carbon line protocol.
+// carbonreceiver implements a receiver.MetricsReceiver for Carbon plaintext, aka "line", protocol.
+// see https://graphite.readthedocs.io/en/latest/feeding-carbon.html#the-plaintext-protocol.
 type carbonReceiver struct {
 	sync.Mutex
 	logger       *zap.Logger
 	config       *Config
 	nextConsumer consumer.MetricsConsumer
 
+	parser parser
+
 	startOnce sync.Once
 	stopOnce  sync.Once
 }
 
 var _ receiver.MetricsReceiver = (*carbonReceiver)(nil)
+
+type parser interface {
+	Parse(line string) (*metricspb.Metric, error)
+}
 
 func (r *carbonReceiver) MetricsSource() string {
 	return "Carbon"
