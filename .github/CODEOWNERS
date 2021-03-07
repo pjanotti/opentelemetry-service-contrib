@@ -52,6 +52,7 @@ receiver/awsxrayreceiver/                @open-telemetry/collector-contrib-appro
 receiver/carbonreceiver/                 @open-telemetry/collector-contrib-approvers @pjanotti
 receiver/collectdreceiver/               @open-telemetry/collector-contrib-approvers @owais
 receiver/dockerstatsreceiver/            @open-telemetry/collector-contrib-approvers @rmfitzpatrick
+receiver/dotnetdiagnosticsreceiver/      @open-telemetry/collector-contrib-approvers @pmcollins @davmanson
 receiver/k8sclusterreceiver/             @open-telemetry/collector-contrib-approvers @asuresh4
 receiver/kubeletstatsreceiver/           @open-telemetry/collector-contrib-approvers @pmcollins @asuresh4
 receiver/prometheusexecreceiver/         @open-telemetry/collector-contrib-approvers @keitwb @james-bebbington
