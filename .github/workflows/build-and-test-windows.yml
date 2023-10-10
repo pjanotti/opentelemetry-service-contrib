@@ -58,8 +58,13 @@ jobs:
             ~\go\pkg\mod
             ~\AppData\Local\go-build
           key: go-build-cache-${{ runner.os }}-${{ matrix.group }}-go-${{ hashFiles('**/go.sum') }}
+      - name: List Perf Counters
+        run: Get-Counter -ListSet * | Select -Expand Counter | Sort
       - name: Run Unit tests
         run: make -j2 gotest GROUP=${{ matrix.group }}
+      - name: 2nd list Perf Counters
+        if: always()
+        run: Get-Counter -ListSet * | Select -Expand Counter | Sort
   windows-unittest:
     if: ${{ github.actor != 'dependabot[bot]' && (contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push') }}
     runs-on: windows-latest
