@@ -58,13 +58,14 @@ jobs:
             ~\go\pkg\mod
             ~\AppData\Local\go-build
           key: go-build-cache-${{ runner.os }}-${{ matrix.group }}-go-${{ hashFiles('**/go.sum') }}
-      - name: List Perf Counters
-        run: Get-Counter -ListSet * | Select -Expand Counter | Sort
       - name: Run Unit tests
         run: make -j2 gotest GROUP=${{ matrix.group }}
-      - name: 2nd list Perf Counters
+      - name: Get DirectoryServices erroring counter
         if: always()
-        run: Get-Counter -ListSet * | Select -Expand Counter | Sort
+        run: Get-Counter -Counter "\DirectoryServices(*)\DRA Inbound Bytes Compressed (Between Sites, After Compression) Since Boot"
+      - name: Get DirectoryServices all counters
+        if: always()
+        run: Get-Counter -Counter "\DirectoryServices(*)\*"
   windows-unittest:
     if: ${{ github.actor != 'dependabot[bot]' && (contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push') }}
     runs-on: windows-latest
