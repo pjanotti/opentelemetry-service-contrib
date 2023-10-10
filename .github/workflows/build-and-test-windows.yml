@@ -42,9 +42,6 @@ jobs:
       - if: matrix.group == 'receiver-0'
         name: install IIS
         run: Install-WindowsFeature -name Web-Server -IncludeManagementTools
-      - name: List Windows services BEFORE Install
-        run: sc.exe query type= service
-        continue-on-error: true
       - if: matrix.group == 'receiver-0'
         name: Install Active Directory DS
         run: Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
@@ -54,6 +51,9 @@ jobs:
           cache: false
       - name: List Windows services AFTER Install
         run: sc.exe query type= service
+        continue-on-error: true
+      - name: List AD commandlets
+        run: Get-Command -Module ADDSDeployment
         continue-on-error: true
       - name: Cache Go
         id: go-mod-cache
