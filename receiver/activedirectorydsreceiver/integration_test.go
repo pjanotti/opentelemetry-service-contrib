@@ -25,7 +25,6 @@ TestIntegration test scraping metrics from a running Active Directory domain con
 The domain controller must be set up locally outside of this test in order for it to pass.
 */
 func TestIntegration(t *testing.T) {
-	t.Skip("See https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/22480")
 	t.Parallel()
 
 	fact := NewFactory()
