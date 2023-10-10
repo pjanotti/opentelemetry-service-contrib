@@ -42,6 +42,8 @@ jobs:
       - if: matrix.group == 'receiver-0'
         name: install IIS
         run: Install-WindowsFeature -name Web-Server -IncludeManagementTools
+      - name: List Windows services before Install
+        run: Get-Service | Sort DisplayName | fl
       - if: matrix.group == 'receiver-0'
         name: Install Active Directory DS
         run: Install-WindowsFeature -name AD-Domain-Services -IncludeManagementTools
@@ -49,6 +51,8 @@ jobs:
         with:
           go-version: ~1.20.8
           cache: false
+      - name: List Windows services after Install
+        run: Get-Service | Sort DisplayName | fl
       - name: Cache Go
         id: go-mod-cache
         timeout-minutes: 15
