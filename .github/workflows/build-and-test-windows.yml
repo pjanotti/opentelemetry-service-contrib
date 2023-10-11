@@ -49,8 +49,11 @@ jobs:
         with:
           go-version: ~1.20.8
           cache: false
-      - name: List Windows services AFTER Install
-        run: Install-ADDSForest -DomainName afdiwjrikkkfduafef.com -SafeModeAdministratorPassword "af8ekjd8fje00t88e09r89w8cdk" -Force
+      - name: Test-ADDSDomainControllerInstallation
+        run: Test-ADDSDomainControllerInstallation -InstallDns -DomainName "addstest.lan"
+        continue-on-error: true
+      - name: Install-ADDSDomainController
+        run: Install-ADDSDomainController -CreateDnsDelegation:$false -CriticalReplicationOnly:$false -DatabasePath "C:\Windows\NTDS" -DomainName "addstest.lan" -InstallDNS:$true -LogPath "C:\Windows\NTDS" -SiteName "Default-First-Site-Name" -SYSVOLPath "C:\Windows\SYSVOL" -Force:$true
         continue-on-error: true
       - name: Cache Go
         id: go-mod-cache
