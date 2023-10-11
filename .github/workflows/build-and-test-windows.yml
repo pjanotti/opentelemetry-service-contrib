@@ -50,7 +50,7 @@ jobs:
           go-version: ~1.20.8
           cache: false
       - name: Test-ADDSDomainControllerInstallation
-        run: Test-ADDSDomainControllerInstallation -InstallDns -DomainName "addstest.lan"
+        run: Test-ADDSDomainControllerInstallation -InstallDns -DomainName "addstest.lan" -Force:$true
         continue-on-error: true
       - name: Install-ADDSDomainController
         run: Install-ADDSDomainController -CreateDnsDelegation:$false -CriticalReplicationOnly:$false -DatabasePath "C:\Windows\NTDS" -DomainName "addstest.lan" -InstallDNS:$true -LogPath "C:\Windows\NTDS" -SiteName "Default-First-Site-Name" -SYSVOLPath "C:\Windows\SYSVOL" -Force:$true
