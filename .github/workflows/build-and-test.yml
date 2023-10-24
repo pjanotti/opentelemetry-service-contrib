@@ -19,7 +19,7 @@ concurrency:
 jobs:
   setup-environment:
     timeout-minutes: 30
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, windows-latest]
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - uses: actions/checkout@v4
@@ -74,7 +74,10 @@ jobs:
           - pkg
           - cmd
           - other
-    runs-on: ubuntu-latest
+        runner:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.runner }}
     needs: [setup-environment]
     steps:
       - uses: actions/checkout@v4
