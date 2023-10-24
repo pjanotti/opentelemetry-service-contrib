@@ -18,8 +18,13 @@ concurrency:
 
 jobs:
   setup-environment:
+    strategy:
+      matrix:
+        runner:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
-    runs-on: [ubuntu-latest, windows-latest]
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - uses: actions/checkout@v4
