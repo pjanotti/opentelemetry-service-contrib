@@ -34,7 +34,7 @@ jobs:
           cache: false
       - name: Cache Go
         id: go-cache
-        timeout-minutes: 5
+        timeout-minutes: 20
         uses: actions/cache@v3
         with:
           path: |
