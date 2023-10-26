@@ -15,17 +15,19 @@ import (
 )
 
 const (
-	draInboundBytesCompressed              = "DRA Inbound Bytes Compressed (Between Sites, After Compression) Since Boot"
-	draInboundBytesNotCompressed           = "DRA Inbound Bytes Not Compressed (Within Site) Since Boot"
-	draOutboundBytesCompressed             = "DRA Outbound Bytes Compressed (Between Sites, After Compression) Since Boot"
-	draOutboundBytesNotCompressed          = "DRA Outbound Bytes Not Compressed (Within Site) Since Boot"
-	draInboundFullSyncObjectsRemaining     = "DRA Inbound Full Sync Objects Remaining"
-	draInboundObjects                      = "DRA Inbound Objects/sec"
-	draOutboundObjects                     = "DRA Outbound Objects/sec"
-	draInboundProperties                   = "DRA Inbound Properties Total/sec"
-	draOutboundProperties                  = "DRA Outbound Properties/sec"
-	draInboundValuesDNs                    = "DRA Inbound Values (DNs only)/sec"
-	draInboundValuesTotal                  = "DRA Inbound Values Total/sec"
+	draInboundBytesCompressed          = "DRA Inbound Bytes Compressed (Between Sites, After Compression) Since Boot"
+	draInboundBytesNotCompressed       = "DRA Inbound Bytes Not Compressed (Within Site) Since Boot"
+	draOutboundBytesCompressed         = "DRA Outbound Bytes Compressed (Between Sites, After Compression) Since Boot"
+	draOutboundBytesNotCompressed      = "DRA Outbound Bytes Not Compressed (Within Site) Since Boot"
+	draInboundFullSyncObjectsRemaining = "DRA Inbound Full Sync Objects Remaining"
+	draInboundObjects                  = "DRA Inbound Objects/sec"
+	draOutboundObjects                 = "DRA Outbound Objects/sec"
+	draInboundProperties               = "DRA Inbound Properties Total/sec"
+	draOutboundProperties              = "DRA Outbound Properties/sec"
+	//revive:disable-next-line:var-naming
+	draInboundValuesDNs   = "DRA Inbound Values (DNs only)/sec"
+	draInboundValuesTotal = "DRA Inbound Values Total/sec"
+	//revive:disable-next-line:var-naming
 	draOutboundValuesDNs                   = "DRA Outbound Values (DNs only)/sec"
 	draOutboundValuesTotal                 = "DRA Outbound Values Total/sec"
 	draPendingReplicationOperations        = "DRA Pending Replication Operations"
