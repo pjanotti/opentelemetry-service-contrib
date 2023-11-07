@@ -191,7 +191,7 @@ func TestSequentialTraceArrival(t *testing.T) {
 }
 
 func TestConcurrentTraceArrival(t *testing.T) {
-	traceIds, batches := generateIdsAndBatches(128)
+	traceIds, batches := generateIdsAndBatches(2048)
 
 	var wg sync.WaitGroup
 	cfg := Config{

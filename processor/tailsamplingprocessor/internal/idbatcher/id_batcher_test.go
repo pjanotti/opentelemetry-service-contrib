@@ -101,7 +101,7 @@ func concurrencyTest(t *testing.T, numBatches, newBatchesInitialCapacity, batchC
 		}
 	}()
 
-	ids := generateSequentialIds(10000)
+	ids := generateSequentialIds(100000)
 	wg := &sync.WaitGroup{}
 	for i := 0; i < len(ids); i++ {
 		wg.Add(1)
