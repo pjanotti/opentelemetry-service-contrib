@@ -39,7 +39,7 @@ jobs:
     env:
       # Set go GC environment variables for the whole matrix so we avoid OOM
       GOGC: 50
-      GOMEMLIMIT: 6000000KiB
+      GOMEMLIMIT: 4000000KiB
     if: ${{ github.actor != 'dependabot[bot]' && (contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v4
