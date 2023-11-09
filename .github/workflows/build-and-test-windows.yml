@@ -36,6 +36,10 @@ jobs:
           - cmd
           - other
     runs-on: windows-latest
+    env:
+      # Set go GC environment variables for the whole matrix so we avoid OOM
+      GOGC: 50
+      GOMEMLIMIT: 6000000KiB
     if: ${{ github.actor != 'dependabot[bot]' && (contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push') }}
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +59,8 @@ jobs:
             ~\go\pkg\mod
             ~\AppData\Local\go-build
           key: go-build-cache-${{ runner.os }}-${{ matrix.group }}-go-${{ hashFiles('**/go.sum') }}
+      - name: List GO* env vars
+        run: dir "Env:GO*" | sort Name
       - name: Run Unit tests
         run: make -j2 gotest GROUP=${{ matrix.group }}
   windows-unittest:
