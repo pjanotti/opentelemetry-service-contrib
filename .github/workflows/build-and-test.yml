@@ -101,7 +101,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/go-build
-          key: go-lint-build-${{ matrix.group }}-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+          key: go-lint-build-${{ matrix.group }}-${{ runner.os }}-with-windows-step-${{ hashFiles('**/go.sum') }}
       - name: Lint
         run: make -j2 golint GROUP=${{ matrix.group }}
       - name: Lint with GOOS=windows
