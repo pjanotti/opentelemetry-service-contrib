@@ -1,0 +1,59 @@
+name: scoped-test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  changed-files:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    outputs:
+      go_sources: ${{ steps.changed-files.outputs.go_sources_all_changed_files }}
+      go_tests: ${{ steps.changed-files.outputs.go_tests_all_changed_files }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed go files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            go_sources:
+              - '**.go'
+              - '!**_test.go'
+            go_tests:
+              - '**_test.go'
+
+  scoped-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    needs: changed-files
+    if: needs.changed-files.outputs.go_sources || needs.changed-files.outputs.go_tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "~1.22.5"
+          cache: false
+
+      - name: Run changed tests
+        if: needs.changed-files.outputs.go_tests
+        env:
+          CHANGED_GOLANG_TESTS: ${{ needs.changed-files.outputs.go_tests }}
+        run: |
+          make run-changed-tests
+
+      - name: Run tests on dependent components
+        if: needs.changed-files.outputs.go_sources
+        env:
+          CHANGED_GOLANG_SOURCES: ${{ needs.changed-files.outputs.go_sources }}
+        run: |
+          make for-affected-components CMD="make test"
