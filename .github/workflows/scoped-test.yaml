@@ -36,7 +36,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     needs: changed-files
-    if: needs.changed-files.outputs.go_sources || needs.changed-files.outputs.go_tests
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
