@@ -11,15 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
     outputs:
-      go_sources: ${{ steps.changed-files.outputs.go_sources_all_changed_files }}
-      go_tests: ${{ steps.changed-files.outputs.go_tests_all_changed_files }}
+      go_sources: ${{ steps.get-changed-files.outputs.go_sources_all_changed_files }}
+      go_tests: ${{ steps.get-changed-files.outputs.go_tests_all_changed_files }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Get changed go files
-        id: changed-files
+        id: get-changed-files
         uses: tj-actions/changed-files@v45
         with:
           files: |
