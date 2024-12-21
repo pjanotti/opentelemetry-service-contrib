@@ -14,6 +14,7 @@ const (
 	IgnoreError    ErrorMode = "ignore"
 	PropagateError ErrorMode = "propagate"
 	SilentError    ErrorMode = "silent"
+	AnotherError   ErrorMode = "another"
 )
 
 func (e *ErrorMode) UnmarshalText(text []byte) error {
