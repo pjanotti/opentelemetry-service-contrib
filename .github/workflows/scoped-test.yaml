@@ -37,6 +37,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: changed-files
     steps:
+      - name: Echo changed files
+        shell: bash
+        run: |
+          echo "go_sources: ${{ needs.changed-files.outputs.go_sources }}"
+          echo "go_tests: ${{ needs.changed-files.outputs.go_tests }}"
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
