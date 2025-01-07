@@ -22,7 +22,7 @@ jobs:
         id: get-changed-files
         uses: tj-actions/changed-files@v45
         with:
-          files: |
+          files_yaml: |
             go_sources:
               - '**.go'
               - '!**_test.go'
