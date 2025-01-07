@@ -50,7 +50,7 @@ jobs:
 
       - name: Try to restore go-cache
         id: go-cache
-        timeout-minutes: 5
+        timeout-minutes: 25
         uses: actions/cache/restore@v4
         with:
           path: |
