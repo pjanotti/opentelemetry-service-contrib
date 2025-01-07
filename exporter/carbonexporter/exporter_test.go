@@ -9,7 +9,6 @@ import (
 	"errors"
 	"io"
 	"net"
-	"runtime"
 	"strconv"
 	"sync"
 	"sync/atomic"

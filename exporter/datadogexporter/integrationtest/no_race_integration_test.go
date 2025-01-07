@@ -8,7 +8,6 @@ package integrationtest // import "github.com/open-telemetry/opentelemetry-colle
 import (
 	"context"
 	"encoding/json"
-	"runtime"
 	"testing"
 	"time"
 
