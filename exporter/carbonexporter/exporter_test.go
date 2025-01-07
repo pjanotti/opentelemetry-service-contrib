@@ -74,10 +74,6 @@ func TestConsumeMetricsWithResourceToTelemetry(t *testing.T) {
 }
 
 func TestConsumeMetrics(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("skipping test on windows, see https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/10147")
-	}
-
 	tests := []struct {
 		name              string
 		md                pmetric.Metrics
