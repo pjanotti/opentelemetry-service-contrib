@@ -259,15 +259,15 @@ gci: $(TOOLS_BIN_DIR)/gci
 	@echo "running $(GCI)"
 	@$(GCI) write -s standard -s default -s "prefix(github.com/open-telemetry/opentelemetry-collector-contrib)" $(ALL_SRC_AND_DOC)
 
-CHANGED_GOLANG_SRCS?=$(shell git diff main --name-only | grep -E '.*\.go$$' | grep -v -E '.*_test\.go$$')
+CHANGED_GOLANG_SOURCES?=$(shell git diff main --name-only | grep -E '.*\.go$$' | grep -v -E '.*_test\.go$$')
 .PHONY: for-affected-components
 for-affected-components:
 	@echo "Checking for affected components..."
-	@if [ -z '$(CHANGED_GOLANG_SRCS)' ]; then \
+	@if [ -z '$(CHANGED_GOLANG_SOURCES)' ]; then \
 		echo "No go source changes detected in shippable code."; \
 	else \
 		cd $(SRC_ROOT); \
-		DEPENDENT_PKGS=$$(echo $(CHANGED_GOLANG_SRCS) | xargs sed -n 's|^package .* // import "\(.*\)"$$|\1|p' | uniq); \
+		DEPENDENT_PKGS=$$(echo $(CHANGED_GOLANG_SOURCES) | xargs sed -n 's|^package .* // import "\(.*\)"$$|\1|p' | uniq); \
 		if [ -z '$${DEPENDENT_PKGS}' ]; then \
 			echo "No other package depends on the one being changed."; \
 		else \
