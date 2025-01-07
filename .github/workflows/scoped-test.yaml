@@ -24,8 +24,7 @@ jobs:
         with:
           files_yaml: |
             sources:
-              - '**.go'
-              - '!**_test.go'
+              - '**[!_test].go'
             tests:
               - '**_test.go'
 
