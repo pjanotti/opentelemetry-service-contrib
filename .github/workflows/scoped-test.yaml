@@ -24,10 +24,10 @@ jobs:
         with:
           files_yaml: |
             sources:
-              - **/*.go
+              - '**/*.go'
               - '!**/*_test.go'
             tests:
-              - **/*_test.go
+              - '**/*_test.go'
 
   scoped-tests:
     strategy:
