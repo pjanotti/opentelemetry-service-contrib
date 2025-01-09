@@ -4,6 +4,8 @@ If you would like to contribute please read OpenTelemetry Collector [contributin
 guidelines](https://github.com/open-telemetry/opentelemetry-collector/blob/main/CONTRIBUTING.md) before you begin your
 work.
 
+A change that shouldn't trigger the test scoped actions.
+
 ## Pull-requests
 
 ### Title guidelines
