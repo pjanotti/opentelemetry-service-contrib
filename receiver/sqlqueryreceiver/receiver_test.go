@@ -42,6 +42,7 @@ func TestCreateLogs(t *testing.T) {
 		},
 		consumertest.NewNop(),
 	)
+
 	require.NoError(t, err)
 	err = receiver.Start(ctx, componenttest.NewNopHost())
 	require.NoError(t, err)
