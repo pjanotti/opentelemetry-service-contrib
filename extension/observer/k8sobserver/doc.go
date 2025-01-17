@@ -1,5 +1,5 @@
 // Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.1
 
 // Package k8sobserver implements a k8s observer extension for monitoring pods.
 

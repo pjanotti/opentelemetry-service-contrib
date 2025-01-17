@@ -1,5 +1,5 @@
 // Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.1
 
 // Package stanzareceiver implements a receiver that can be used by the
 // Opentelemetry collector to receive logs using the stanza log agent

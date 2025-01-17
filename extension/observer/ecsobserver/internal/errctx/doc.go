@@ -1,5 +1,5 @@
 // Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.1
 
 // Package errctx allow attaching values to an error in a structural way
 // using WithValue and read the value out using ValueFrom.

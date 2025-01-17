@@ -1,6 +1,6 @@
 // Copyright The OpenTelemetry Authors
 // Copyright (c) 2018 The Jaeger Authors.
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.1
 
 package filesource
 
