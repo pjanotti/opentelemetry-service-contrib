@@ -84,7 +84,6 @@ type processHandle interface {
 	CmdlineWithContext(context.Context) (string, error)
 	CmdlineSliceWithContext(context.Context) ([]string, error)
 	TimesWithContext(context.Context) (*cpu.TimesStat, error)
-	PercentWithContext(context.Context, time.Duration) (float64, error)
 	MemoryInfoWithContext(context.Context) (*process.MemoryInfoStat, error)
 	MemoryPercentWithContext(context.Context) (float32, error)
 	IOCountersWithContext(context.Context) (*process.IOCountersStat, error)

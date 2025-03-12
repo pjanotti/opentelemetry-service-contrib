@@ -249,12 +249,6 @@ func (w *windowsProcess) getProcessInfoViaHandle(ctx context.Context, machineMem
 	}
 }
 
-// PercentWithContext implements processHandle.
-func (w *windowsProcess) PercentWithContext(context.Context, time.Duration) (float64, error) {
-	// TODO: need process handle to get this information.
-	panic("unimplemented")
-}
-
 // CgroupWithContext implements processHandle.
 func (w *windowsProcess) CgroupWithContext(ctx context.Context) (string, error) {
 	// Not supported on Windows.
