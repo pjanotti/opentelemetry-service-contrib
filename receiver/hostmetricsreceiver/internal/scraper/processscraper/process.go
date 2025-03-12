@@ -90,7 +90,6 @@ type processHandle interface {
 	IOCountersWithContext(context.Context) (*process.IOCountersStat, error)
 	NumThreadsWithContext(context.Context) (int32, error)
 	CreateTimeWithContext(context.Context) (int64, error)
-	ParentWithContext(context.Context) (*process.Process, error)
 	PpidWithContext(context.Context) (int32, error)
 	PageFaultsWithContext(context.Context) (*process.PageFaultsStat, error)
 	NumCtxSwitchesWithContext(context.Context) (*process.NumCtxSwitchesStat, error)
@@ -148,19 +147,6 @@ func getEnvWithContext(ctx context.Context, key string, dfault string, combineWi
 	segments := append([]string{value}, combineWith...)
 
 	return filepath.Join(segments...)
-}
-
-func getProcessHandlesInternal(ctx context.Context) (processHandles, error) {
-	processes, err := process.ProcessesWithContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	wrapped := make([]wrappedProcessHandle, len(processes))
-	for i, p := range processes {
-		wrapped[i] = wrappedProcessHandle{Process: p}
-	}
-
-	return &gopsProcessHandles{handles: wrapped}, nil
 }
 
 func parentPid(ctx context.Context, handle processHandle, pid int32) (int32, error) {
