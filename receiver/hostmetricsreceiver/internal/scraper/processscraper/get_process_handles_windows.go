@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"syscall"
-	"time"
 	"unsafe"
 
 	"github.com/shirou/gopsutil/mem"
