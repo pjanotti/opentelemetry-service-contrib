@@ -26,7 +26,6 @@ permissions: read-all
 jobs:
   setup-environment:
     runs-on: [ windows-2025, windows-11-arm ]
-    if: ${{ github.actor != 'dependabot[bot]' && (contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push' || github.event_name == 'merge_group') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -44,7 +43,6 @@ jobs:
   windows-smoke-build:
     needs: [setup-environment]
     runs-on: [ windows-2025, windows-11-arm ]
-    if: ${{ github.actor != 'dependabot[bot]' && (contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push' || github.event_name == 'merge_group') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
