@@ -35,7 +35,7 @@ jobs:
       - run: echo $(./.github/workflows/scripts/is_changed_file_windows.sh ${{ github.event.pull_request.base.sha }} ${{ github.sha }} )
 
   setup-environment:
-    runs-on: windows-2025
+    runs-on: [ windows-2025, windows-11-arm ]
     needs: [ windows-file-changed ]
     if: ${{ github.actor != 'dependabot[bot]' && ((contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push' || github.event_name == 'merge_group') || needs.windows-file-changed.outputs.changed == 'true') }}
     steps:
@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
+        os: [ windows-latest, windows-11-arm ]
     runs-on: ${{ matrix.os }}
     needs: [windows-file-changed, setup-environment]
     if: ${{ github.actor != 'dependabot[bot]' && ((contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push' || github.event_name == 'merge_group') || needs.windows-file-changed.outputs.changed == 'true') }}
