@@ -92,7 +92,7 @@ jobs:
           - pkg
           - cmd-0
           - other
-        os: [windows-2022, windows-2025]
+        os: [windows-2025, windows-11-arm]
     runs-on: ${{ matrix.os }}
     if: ${{ github.actor != 'dependabot[bot]' && (contains(github.event.pull_request.labels.*.name, 'Run Windows') || github.event_name == 'push' || github.event_name == 'merge_group') }}
     env:
@@ -100,9 +100,14 @@ jobs:
       # see https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/28682#issuecomment-1802296776
       GOGC: 50
       GOMEMLIMIT: 2GiB
+      # Go doesn't support race detection on Windows ARM
+      GOTEST_RACE: ${{ fromJson('[null, ""]')[matrix.os == 'windows-11-arm'] }}
+      # CGO_ENABLED=0 is required on Windows ARM since certain libraries are not natively available for Windows ARM
+      CGO_ENABLED: ${{ fromJson('[1, 0]')[matrix.os == 'windows-11-arm'] }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: install IIS
+        if: ${{ matrix.os != 'windows-11-arm' }}
         run: Install-WindowsFeature -name Web-Server -IncludeManagementTools
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         id: go-setup
