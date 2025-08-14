@@ -102,6 +102,8 @@ jobs:
       GOMEMLIMIT: 2GiB
       # Go doesn't support race detection on Windows ARM
       GOTEST_RACE: ${{ fromJson('[null, ""]')[matrix.os == 'windows-11-arm'] }}
+      # CGO_ENABLED=0 is required on Windows ARM since certain libraries are not natively available for Windows ARM
+      CGO_ENABLED: ${{ matrix.os != 'windows-11-arm' }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: install IIS
