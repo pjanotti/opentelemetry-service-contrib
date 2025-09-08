@@ -5,6 +5,8 @@ CMD?=
 OTEL_VERSION=main
 OTEL_STABLE_VERSION=main
 
+# Just to trigger a scoped-test run without golang changes
+
 VERSION=$(shell git describe --always --match "v[0-9]*" HEAD)
 TRIMMED_VERSION=$(shell grep -o 'v[^-]*' <<< "$(VERSION)" | cut -c 2-)
 CORE_VERSIONS=$(SRC_PARENT_DIR)/opentelemetry-collector/versions.yaml
