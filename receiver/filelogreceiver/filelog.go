@@ -49,6 +49,7 @@ func (ReceiverType) BaseConfig(cfg component.Config) adapter.BaseConfig {
 }
 
 // FileLogConfig defines configuration for the filelog receiver
+// adding a useless comment just to test scoped-tests
 type FileLogConfig struct {
 	InputConfig        file.Config `mapstructure:",squash"`
 	adapter.BaseConfig `mapstructure:",squash"`
