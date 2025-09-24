@@ -46,12 +46,22 @@ jobs:
         run: make install-tools
       - name: Generate otelcontribcol files
         run: make genotelcontribcol
-      - name: Build Collector
+      - name: Build Collector amd64
         run: make otelcontribcol
-      - name: Upload Collector Binary
+      - name: Upload Collector Binary amd64
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: collector-binary
+          name: collector-binary-amd64
+          path: ./bin/*
+      - name: Clean bin directory
+        shell: bash
+        run: rm -rf ./bin/*
+      - name: Build Collector arm64
+        run: GOARCH=arm64 make otelcontribcol
+      - name: Upload Collector Binary arm64
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: collector-binary-arm64
           path: ./bin/*
 
   supervisor-test:
@@ -78,7 +88,7 @@ jobs:
       - name: Download Collector Binary
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
-          name: collector-binary
+          name: collector-binary-${{ matrix.os == 'windows-11-arm' && 'arm64' || 'amd64' }}
           path: bin/
       - name: Run opampsupervisor e2e tests
         run: |
@@ -113,7 +123,7 @@ jobs:
       - name: Download Collector Binary
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
-          name: collector-binary
+          name: collector-binary-${{ matrix.os == 'windows-11-arm' && 'arm64' || 'amd64' }}
           path: bin/
       - name: Build supervisor
         run: cd cmd/opampsupervisor; go build
