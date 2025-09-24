@@ -48,17 +48,21 @@ func TestIntegration(t *testing.T) {
 func isIISInstalled(t *testing.T) bool {
 	handle, err := windows.OpenSCManager(nil, nil, windows.SC_MANAGER_CONNECT)
 	require.NoError(t, err)
-	defer windows.CloseServiceHandle(handle)
+	defer func() {
+		require.NoError(t, windows.CloseServiceHandle(handle))
+	}()
 
 	scm := &mgr.Mgr{Handle: handle}
-	defer scm.Disconnect()
+	defer func() {
+		require.NoError(t, scm.Disconnect())
+	}()
 
 	const iisService = "W3SVC" // World Wide Web Publishing Service
 	service, err := scm.OpenService(iisService)
 	if errors.Is(err, windows.ERROR_SERVICE_DOES_NOT_EXIST) {
 		return false
 	}
-	defer service.Close()
 
+	require.NoError(t, service.Close())
 	return true
 }
