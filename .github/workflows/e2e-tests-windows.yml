@@ -57,6 +57,7 @@ jobs:
         shell: bash
         run: rm -rf ./bin/*
       - name: Build Collector arm64
+        shell: bash
         run: GOARCH=arm64 make otelcontribcol
       - name: Upload Collector Binary arm64
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
