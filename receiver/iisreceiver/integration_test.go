@@ -46,12 +46,10 @@ func TestIntegration(t *testing.T) {
 }
 
 func isIISInstalled(t *testing.T) bool {
+	// Use the Windows API directly so full administrative privileges are not required.
 	handle, err := windows.OpenSCManager(nil, nil, windows.SC_MANAGER_CONNECT)
 	require.NoError(t, err)
-	defer func() {
-		require.NoError(t, windows.CloseServiceHandle(handle))
-	}()
-
+	// Ownership of the handle is transferred to the Mgr struct
 	scm := &mgr.Mgr{Handle: handle}
 	defer func() {
 		require.NoError(t, scm.Disconnect())
