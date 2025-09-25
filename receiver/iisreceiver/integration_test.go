@@ -10,10 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/filter"
-
-	"github.com/stretchr/testify/require"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc/mgr"
 
