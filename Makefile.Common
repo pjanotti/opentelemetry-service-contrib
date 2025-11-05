@@ -259,8 +259,8 @@ ifeq ($(GOOS),windows)
 endif
 
 # On Windows changing path with absolute path includes ':' even escaping it is not enough to get it to correctly
-# update PATH, so use a relative path when pre-pending to PATH on Windows. Unfortunately, realpath is not portable
-# between mac and GNU based bash so keeping the full path on non-Windows OSes.
+# update PATH, so use an absolute path on Windows, by removing ':' and adding the root '/', e.g.:
+so "C:/repo-root" becomes "/C/repo-root".
 ifeq ($(GOOS),windows)
     TOOLS_BIN_DIR_PORTABLE?=/$(subst :,,$(TOOLS_BIN_DIR))
 else
