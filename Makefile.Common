@@ -8,7 +8,7 @@ SHELL = /bin/bash
 # SRC_ROOT is the top of the source tree.
 SRC_ROOT := $(shell git rev-parse --show-toplevel)
 # SRC_PARENT_DIR is the absolute path of source tree's parent directory
-SRC_PARENT_DIR := $(shell dirname $(SRC_ROOT))
+SRC_PARENT_DIR := $(dir $(SRC_ROOT))
 
 COVER_DIR?=coverage
 COVER_DIR_ABS?=$(SRC_ROOT)/$(COVER_DIR)
@@ -162,7 +162,7 @@ ifneq (,$(wildcard ./builtunitetest.test))
 	$(GOTESTSUM) --raw-command -- $(GOCMD) tool test2json -p "./..." -t ./builtunitetest.test -test.v -test.failfast -test.timeout $(GOTEST_TIMEOUT)
 endif
 
-INTEGRATION_TEST_FILES := $(shell find . -name *integration_test.go)
+INTEGRATION_TEST_FILES := $(wildcard *integration_test.go)
 INTEGRATION_TESTS := $(if $(INTEGRATION_TEST_FILES),$(shell cat $(INTEGRATION_TEST_FILES) | sed -n "s/func \(Test[A-Za-z0-9_]*\).*/\1/p" | xargs | sed "s/ /|/g"))
 .PHONY: mod-integration-test
 mod-integration-test: $(GOTESTSUM)
