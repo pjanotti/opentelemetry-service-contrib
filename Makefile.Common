@@ -262,7 +262,7 @@ endif
 # update PATH, so use a relative path when pre-pending to PATH on Windows. Unfortunately, realpath is not portable
 # between mac and GNU based bash so keeping the full path on non-Windows OSes.
 ifeq ($(GOOS),windows)
-    TOOLS_BIN_DIR_PORTABLE?=$(shell realpath --relative-to="$(CURDIR)" "$(TOOLS_BIN_DIR)")
+    TOOLS_BIN_DIR_PORTABLE?=/$(subst :,,$(TOOLS_BIN_DIR))
 else
     TOOLS_BIN_DIR_PORTABLE?=$(TOOLS_BIN_DIR)
 endif
