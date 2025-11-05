@@ -15,36 +15,33 @@ MOD_NAME=github.com/open-telemetry/opentelemetry-collector-contrib
 GROUP ?= all
 FOR_GROUP_TARGET=for-$(GROUP)-target
 
-FIND_MOD_ARGS=-type f -name "go.mod"
-TO_MOD_DIR=dirname {} \; | sort | grep -E '^./'
-EX_COMPONENTS=-not -path "./receiver/*" -not -path "./processor/*" -not -path "./exporter/*" -not -path "./extension/*" -not -path "./connector/*"
-EX_INTERNAL=-not -path "./internal/*"
-EX_PKG=-not -path "./pkg/*"
-EX_CMD=-not -path "./cmd/*"
+define get_filtered_mod_dirs
+$(patsubst %/,%,$(dir $(filter-out $(2),$(wildcard $(1)/go.mod))))
+endef
 
 # This includes a final slash
 ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
-RECEIVER_MODS_0 := $(shell find ./receiver/[a-f]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-RECEIVER_MODS_1 := $(shell find ./receiver/[g-o]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-RECEIVER_MODS_2 := $(shell find ./receiver/[p]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) ) # Prometheus is special and gets its own section.
-RECEIVER_MODS_3 := $(shell find ./receiver/[q-z]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
+RECEIVER_MODS_0 := $(call get_filtered_mod_dirs,./receiver/[a-f]*,)
+RECEIVER_MODS_1 := $(call get_filtered_mod_dirs,./receiver/[g-o]*,)
+RECEIVER_MODS_2 := $(call get_filtered_mod_dirs,./receiver/[p]*,) # Prometheus is special and gets its own section.
+RECEIVER_MODS_3 := $(call get_filtered_mod_dirs,./receiver/[q-z]*,)
 RECEIVER_MODS := $(RECEIVER_MODS_0) $(RECEIVER_MODS_1) $(RECEIVER_MODS_2) $(RECEIVER_MODS_3)
-PROCESSOR_MODS_0 := $(shell find ./processor/[a-o]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-PROCESSOR_MODS_1 := $(shell find ./processor/[p-z]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
+PROCESSOR_MODS_0 := $(call get_filtered_mod_dirs,./processor/[a-o]*,)
+PROCESSOR_MODS_1 := $(call get_filtered_mod_dirs,./processor/[p-z]*,)
 PROCESSOR_MODS := $(PROCESSOR_MODS_0) $(PROCESSOR_MODS_1)
-EXPORTER_MODS_0 := $(shell find ./exporter/[a-c]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-EXPORTER_MODS_1 := $(shell find ./exporter/[d-i]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-EXPORTER_MODS_2 := $(shell find ./exporter/[k-o]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-EXPORTER_MODS_3 := $(shell find ./exporter/[p-z]* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
+EXPORTER_MODS_0 := $(call get_filtered_mod_dirs,./exporter/[a-c]*,)
+EXPORTER_MODS_1 := $(call get_filtered_mod_dirs,./exporter/[d-i]*,)
+EXPORTER_MODS_2 := $(call get_filtered_mod_dirs,./exporter/[k-o]*,)
+EXPORTER_MODS_3 := $(call get_filtered_mod_dirs,./exporter/[p-z]*,)
 EXPORTER_MODS := $(EXPORTER_MODS_0) $(EXPORTER_MODS_1) $(EXPORTER_MODS_2) $(EXPORTER_MODS_3)
-EXTENSION_MODS := $(shell find ./extension/* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-CONNECTOR_MODS := $(shell find ./connector/* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-INTERNAL_MODS := $(shell find ./internal/* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-PKG_MODS := $(shell find ./pkg/* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
-CMD_MODS_0 := $(shell find ./cmd/[a-z]* $(FIND_MOD_ARGS) -not -path "./cmd/otel*col/*" -exec $(TO_MOD_DIR) )
+EXTENSION_MODS := $(call get_filtered_mod_dirs,./extension/*,)
+CONNECTOR_MODS := $(call get_filtered_mod_dirs,./connector/*,)
+INTERNAL_MODS := $(call get_filtered_mod_dirs,./internal/*,)
+PKG_MODS := $(call get_filtered_mod_dirs,./pkg/*,)
+CMD_MODS_0 := $(call get_filtered_mod_dirs,./cmd/[a-z]*,./cmd/otel*col/*)
 CMD_MODS := $(CMD_MODS_0)
-OTHER_MODS := $(shell find . $(EX_COMPONENTS) $(EX_INTERNAL) $(EX_PKG) $(EX_CMD) $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR) )
+OTHER_MODS := $(call get_filtered_mod_dirs,.,./receiver/% ./processor/% ./exporter/% ./extension/% ./connector/% ./internal/% ./pkg/% ./cmd/%)
 export ALL_MODS := $(RECEIVER_MODS) $(PROCESSOR_MODS) $(EXPORTER_MODS) $(EXTENSION_MODS) $(CONNECTOR_MODS) $(INTERNAL_MODS) $(PKG_MODS) $(CMD_MODS) $(OTHER_MODS)
 
 CGO_MODS := ./receiver/hostmetricsreceiver
@@ -53,7 +50,7 @@ FIND_INTEGRATION_TEST_MODS={ find . -type f -name "*integration_test.go" & find 
 INTEGRATION_MODS := $(shell $(FIND_INTEGRATION_TEST_MODS) | xargs $(TO_MOD_DIR) | uniq)
 
 # Excluded from ALL_MODS
-GENERATED_MODS := $(shell find ./cmd/otel*col/* $(FIND_MOD_ARGS) -exec $(TO_MOD_DIR))
+GENERATED_MODS := $(call get_filtered_mod_dirs,./cmd/otel*col/*,)
 
 ifeq ($(GOOS),windows)
 	EXTENSION := .exe
