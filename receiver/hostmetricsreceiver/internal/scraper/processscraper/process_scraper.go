@@ -22,7 +22,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/metadata"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/ucal"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/process_ucal"
 )
 
 const (
@@ -49,7 +49,7 @@ type processScraper struct {
 	includeFS          filterset.FilterSet
 	excludeFS          filterset.FilterSet
 	scrapeProcessDelay time.Duration
-	ucals              map[int32]*ucal.CPUUtilizationCalculator
+	ucals              map[int32]*process_ucal.CPUUtilizationCalculator
 	logicalCores       int
 
 	// for mocking
@@ -65,7 +65,7 @@ func newProcessScraper(settings scraper.Settings, cfg *Config) (*processScraper,
 		getProcessCreateTime: processHandle.CreateTimeWithContext,
 		getProcessHandles:    getGopsutilProcessHandles,
 		scrapeProcessDelay:   cfg.ScrapeProcessDelay,
-		ucals:                make(map[int32]*ucal.CPUUtilizationCalculator),
+		ucals:                make(map[int32]*process_ucal.CPUUtilizationCalculator),
 	}
 
 	var err error
@@ -305,7 +305,7 @@ func (s *processScraper) scrapeAndAppendCPUTimeMetric(ctx context.Context, now p
 	}
 
 	if _, ok := s.ucals[pid]; !ok {
-		s.ucals[pid] = &ucal.CPUUtilizationCalculator{}
+		s.ucals[pid] = &process_ucal.CPUUtilizationCalculator{}
 	}
 
 	err = s.ucals[pid].CalculateAndRecord(now, s.logicalCores, times, s.recordCPUUtilization)
