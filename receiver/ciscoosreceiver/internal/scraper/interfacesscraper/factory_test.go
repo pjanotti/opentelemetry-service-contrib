@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/connection"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/interfacesscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/interfacesscraper/internal/interfacesmetadata"
 )
 
 func TestNewFactory(t *testing.T) {
@@ -61,7 +61,7 @@ func TestFactory_ConfigWithDevice(t *testing.T) {
 
 func TestConfig_AllMetricsEnabled(t *testing.T) {
 	config := &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: interfacesmetadata.DefaultMetricsBuilderConfig(),
 	}
 
 	// Verify all interface metrics are enabled by default
@@ -75,7 +75,7 @@ func TestConfig_AllMetricsEnabled(t *testing.T) {
 
 func TestConfig_DisableMetrics(t *testing.T) {
 	config := &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: interfacesmetadata.DefaultMetricsBuilderConfig(),
 	}
 
 	// Test disabling specific metrics
@@ -184,7 +184,7 @@ func TestFactory_Type(t *testing.T) {
 
 func TestConfig_EmptyDevice(t *testing.T) {
 	config := &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: interfacesmetadata.DefaultMetricsBuilderConfig(),
 		Device:               connection.DeviceConfig{},
 	}
 

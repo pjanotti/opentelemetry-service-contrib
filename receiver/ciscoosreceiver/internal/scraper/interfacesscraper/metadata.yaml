@@ -1,4 +1,5 @@
 type: interfaces
+generated_package_name: interfacesmetadata
 
 status:
   class: scraper

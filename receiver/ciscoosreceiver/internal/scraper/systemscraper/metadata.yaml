@@ -1,4 +1,5 @@
 type: system
+generated_package_name: systemmetadata
 
 status:
   class: scraper

@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/scraper"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/systemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/systemscraper/internal/systemmetadata"
 )
 
 // NewFactory creates a factory for system scraper.
@@ -23,7 +23,7 @@ func NewFactory() scraper.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: systemmetadata.DefaultMetricsBuilderConfig(),
 	}
 }
 

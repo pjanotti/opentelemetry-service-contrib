@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/collector/scraper"
 	"go.uber.org/zap"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/interfacesscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/interfacesscraper/internal/interfacesmetadata"
 )
 
 // NewFactory creates a factory for interfaces scraper.
@@ -24,7 +24,7 @@ func NewFactory() scraper.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: interfacesmetadata.DefaultMetricsBuilderConfig(),
 	}
 }
 

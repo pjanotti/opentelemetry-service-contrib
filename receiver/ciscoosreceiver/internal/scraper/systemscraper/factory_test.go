@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/connection"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/systemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/systemscraper/internal/systemmetadata"
 )
 
 func TestNewFactory(t *testing.T) {
@@ -65,7 +65,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "valid_config",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: systemmetadata.DefaultMetricsBuilderConfig(),
 				Device: connection.DeviceConfig{
 					Device: connection.DeviceInfo{
 						Host: connection.HostInfo{IP: "192.168.1.1", Port: 22},
@@ -78,7 +78,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "empty_device",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: systemmetadata.DefaultMetricsBuilderConfig(),
 				Device:               connection.DeviceConfig{},
 			},
 			expectError: false, // Empty device is allowed at config level
@@ -98,7 +98,7 @@ func TestConfig_Validate(t *testing.T) {
 
 func TestConfig_MetricsConfiguration(t *testing.T) {
 	config := &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: systemmetadata.DefaultMetricsBuilderConfig(),
 	}
 
 	// Verify metrics are configurable

@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/connection"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/systemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/systemscraper/internal/systemmetadata"
 )
 
 func TestSystemScraper_Start(t *testing.T) {
@@ -33,7 +33,7 @@ func TestSystemScraper_Start(t *testing.T) {
 			},
 		},
 	}
-	config.MetricsBuilderConfig = metadata.DefaultMetricsBuilderConfig()
+	config.MetricsBuilderConfig = systemmetadata.DefaultMetricsBuilderConfig()
 
 	scraper := &systemScraper{
 		logger: logger,
@@ -60,7 +60,7 @@ func TestSystemScraper_Start_EmptyIP(t *testing.T) {
 			},
 		},
 	}
-	config.MetricsBuilderConfig = metadata.DefaultMetricsBuilderConfig()
+	config.MetricsBuilderConfig = systemmetadata.DefaultMetricsBuilderConfig()
 
 	scraper := &systemScraper{
 		logger: logger,

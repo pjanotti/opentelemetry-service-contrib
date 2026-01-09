@@ -5,11 +5,11 @@ package interfacesscraper // import "github.com/open-telemetry/opentelemetry-col
 
 import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/connection"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/interfacesscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/interfacesscraper/internal/interfacesmetadata"
 )
 
 // Config holds configuration for the interfaces scraper
 type Config struct {
-	metadata.MetricsBuilderConfig `mapstructure:",squash"`
-	Device                        connection.DeviceConfig `mapstructure:"-"` // Passed from receiver config
+	interfacesmetadata.MetricsBuilderConfig `mapstructure:",squash"`
+	Device                                  connection.DeviceConfig `mapstructure:"-"` // Passed from receiver config
 }

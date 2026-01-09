@@ -15,21 +15,21 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/connection"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/interfacesscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/interfacesscraper/internal/interfacesmetadata"
 )
 
 // interfacesScraper collects interface metrics from Cisco devices
 type interfacesScraper struct {
 	logger       *zap.Logger
 	config       *Config
-	mb           *metadata.MetricsBuilder
+	mb           *interfacesmetadata.MetricsBuilder
 	deviceTarget string
 	rpcClient    *connection.RPCClient
 }
 
 func (s *interfacesScraper) Start(_ context.Context, _ component.Host) error {
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, scraper.Settings{
-		ID:                component.MustNewIDWithName(metadata.Type.String(), "interfaces"),
+	s.mb = interfacesmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, scraper.Settings{
+		ID:                component.MustNewIDWithName(interfacesmetadata.Type.String(), "interfaces"),
 		TelemetrySettings: component.TelemetrySettings{Logger: s.logger},
 	})
 
@@ -68,17 +68,17 @@ func (s *interfacesScraper) ScrapeMetrics(ctx context.Context) (pmetric.Metrics,
 			intf.OperStatus = StatusDown
 		}
 
-		s.mb.RecordSystemNetworkIoDataPoint(timestamp, int64(intf.InputBytes), metadata.AttributeNetworkIoDirectionReceive, description, macAddress, intf.Name, speedString)
-		s.mb.RecordSystemNetworkIoDataPoint(timestamp, int64(intf.OutputBytes), metadata.AttributeNetworkIoDirectionTransmit, description, macAddress, intf.Name, speedString)
+		s.mb.RecordSystemNetworkIoDataPoint(timestamp, int64(intf.InputBytes), interfacesmetadata.AttributeNetworkIoDirectionReceive, description, macAddress, intf.Name, speedString)
+		s.mb.RecordSystemNetworkIoDataPoint(timestamp, int64(intf.OutputBytes), interfacesmetadata.AttributeNetworkIoDirectionTransmit, description, macAddress, intf.Name, speedString)
 
-		s.mb.RecordSystemNetworkErrorsDataPoint(timestamp, int64(intf.InputErrors), metadata.AttributeNetworkIoDirectionReceive, description, macAddress, intf.Name, speedString)
-		s.mb.RecordSystemNetworkErrorsDataPoint(timestamp, int64(intf.OutputErrors), metadata.AttributeNetworkIoDirectionTransmit, description, macAddress, intf.Name, speedString)
+		s.mb.RecordSystemNetworkErrorsDataPoint(timestamp, int64(intf.InputErrors), interfacesmetadata.AttributeNetworkIoDirectionReceive, description, macAddress, intf.Name, speedString)
+		s.mb.RecordSystemNetworkErrorsDataPoint(timestamp, int64(intf.OutputErrors), interfacesmetadata.AttributeNetworkIoDirectionTransmit, description, macAddress, intf.Name, speedString)
 
-		s.mb.RecordSystemNetworkPacketDroppedDataPoint(timestamp, int64(intf.InputDrops), metadata.AttributeNetworkIoDirectionReceive, description, macAddress, intf.Name, speedString)
-		s.mb.RecordSystemNetworkPacketDroppedDataPoint(timestamp, int64(intf.OutputDrops), metadata.AttributeNetworkIoDirectionTransmit, description, macAddress, intf.Name, speedString)
+		s.mb.RecordSystemNetworkPacketDroppedDataPoint(timestamp, int64(intf.InputDrops), interfacesmetadata.AttributeNetworkIoDirectionReceive, description, macAddress, intf.Name, speedString)
+		s.mb.RecordSystemNetworkPacketDroppedDataPoint(timestamp, int64(intf.OutputDrops), interfacesmetadata.AttributeNetworkIoDirectionTransmit, description, macAddress, intf.Name, speedString)
 
-		s.mb.RecordSystemNetworkPacketCountDataPoint(timestamp, int64(intf.InputMulticast), metadata.AttributeNetworkPacketTypeMulticast, description, macAddress, intf.Name, speedString)
-		s.mb.RecordSystemNetworkPacketCountDataPoint(timestamp, int64(intf.InputBroadcast), metadata.AttributeNetworkPacketTypeBroadcast, description, macAddress, intf.Name, speedString)
+		s.mb.RecordSystemNetworkPacketCountDataPoint(timestamp, int64(intf.InputMulticast), interfacesmetadata.AttributeNetworkPacketTypeMulticast, description, macAddress, intf.Name, speedString)
+		s.mb.RecordSystemNetworkPacketCountDataPoint(timestamp, int64(intf.InputBroadcast), interfacesmetadata.AttributeNetworkPacketTypeBroadcast, description, macAddress, intf.Name, speedString)
 
 		s.mb.RecordSystemNetworkInterfaceStatusDataPoint(timestamp, intf.GetOperStatusInt(), description, macAddress, intf.Name, speedString)
 	}
@@ -90,7 +90,7 @@ func (s *interfacesScraper) ScrapeMetrics(ctx context.Context) (pmetric.Metrics,
 		rb.SetOsName(s.rpcClient.GetOSType())
 	}
 
-	return s.mb.Emit(metadata.WithResource(rb.Emit())), nil
+	return s.mb.Emit(interfacesmetadata.WithResource(rb.Emit())), nil
 }
 
 func (s *interfacesScraper) Shutdown(_ context.Context) error {

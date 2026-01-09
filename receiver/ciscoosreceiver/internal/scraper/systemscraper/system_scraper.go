@@ -16,14 +16,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/connection"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/systemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver/internal/scraper/systemscraper/internal/systemmetadata"
 )
 
 // systemScraper collects system-level metrics for the Cisco device
 type systemScraper struct {
 	logger          *zap.Logger
 	config          *Config
-	mb              *metadata.MetricsBuilder
+	mb              *systemmetadata.MetricsBuilder
 	collectionCount int
 	deviceTarget    string
 	rpcClient       *connection.RPCClient
@@ -33,8 +33,8 @@ func (s *systemScraper) Start(_ context.Context, _ component.Host) error {
 	s.logger.Info("Starting system scraper with metric configuration",
 		zap.Bool("device_up_enabled", s.config.Metrics.CiscoDeviceUp.Enabled))
 
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, scraper.Settings{
-		ID:                component.MustNewIDWithName(metadata.Type.String(), "system"),
+	s.mb = systemmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, scraper.Settings{
+		ID:                component.MustNewIDWithName(systemmetadata.Type.String(), "system"),
 		TelemetrySettings: component.TelemetrySettings{Logger: s.logger},
 	})
 
@@ -109,7 +109,7 @@ func (s *systemScraper) ScrapeMetrics(ctx context.Context) (pmetric.Metrics, err
 			rb.SetHostIP(s.deviceTarget)
 			rb.SetHwType("network")
 
-			return s.mb.Emit(metadata.WithResource(rb.Emit())), nil
+			return s.mb.Emit(systemmetadata.WithResource(rb.Emit())), nil
 		}
 
 		s.rpcClient = rpcClient
@@ -142,7 +142,7 @@ func (s *systemScraper) ScrapeMetrics(ctx context.Context) (pmetric.Metrics, err
 		rb.SetOsName(s.rpcClient.GetOSType())
 	}
 
-	return s.mb.Emit(metadata.WithResource(rb.Emit())), nil
+	return s.mb.Emit(systemmetadata.WithResource(rb.Emit())), nil
 }
 
 // collectCPUUtilization collects CPU utilization metric from the device
