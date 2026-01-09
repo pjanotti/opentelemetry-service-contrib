@@ -10,15 +10,15 @@ import (
 	as "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/stretchr/testify/require"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/aerospikereceiver/internal/cluster/mocks"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/aerospikereceiver/internal/cluster/clustermocks"
 )
 
 func TestSubsetCluster_New(t *testing.T) {
 	t.Parallel()
 
 	nodes := []Node{
-		mocks.NewNode(t),
-		mocks.NewNode(t),
+		clustermocks.NewNode(t),
+		clustermocks.NewNode(t),
 	}
 
 	cPolicy := as.NewClientPolicy()
@@ -58,8 +58,8 @@ func TestSubsetCluster_GetNodes(t *testing.T) {
 	t.Parallel()
 
 	nodes := []Node{
-		mocks.NewNode(t),
-		mocks.NewNode(t),
+		clustermocks.NewNode(t),
+		clustermocks.NewNode(t),
 	}
 
 	testCluster := SubsetCluster{
@@ -73,10 +73,10 @@ func TestSubsetCluster_GetNodes(t *testing.T) {
 func TestSubsetCluster_Close(t *testing.T) {
 	t.Parallel()
 
-	n1 := mocks.NewNode(t)
+	n1 := clustermocks.NewNode(t)
 	n1.On("Close").Return()
 
-	n2 := mocks.NewNode(t)
+	n2 := clustermocks.NewNode(t)
 	n2.On("Close").Return()
 
 	nodes := []Node{

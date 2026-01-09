@@ -9,13 +9,13 @@ import (
 	as "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/stretchr/testify/require"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/aerospikereceiver/internal/cluster/mocks"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/aerospikereceiver/internal/cluster/clustermocks"
 )
 
 func TestCluster_GetNodes(t *testing.T) {
 	t.Parallel()
 
-	asc := mocks.NewAsclient(t)
+	asc := clustermocks.NewAsclient(t)
 	nodes := []*as.Node{
 		{},
 		{},

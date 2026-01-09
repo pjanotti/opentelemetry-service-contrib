@@ -10,11 +10,11 @@ import (
 	as "github.com/aerospike/aerospike-client-go/v8"
 	"github.com/stretchr/testify/require"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/aerospikereceiver/internal/cluster/mocks"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/aerospikereceiver/internal/cluster/clustermocks"
 )
 
 func TestNode_NewConnNode(t *testing.T) {
-	conn := mocks.NewAsconn(t)
+	conn := clustermocks.NewAsconn(t)
 	nodeName := "BB990C28F270008"
 
 	cPolicy := as.NewClientPolicy()
@@ -56,7 +56,7 @@ func TestNode_NewConnNode(t *testing.T) {
 	connFactoryNegHost.AssertExpectations(t)
 	require.ErrorContains(t, err, "ResultCode: TIMEOUT")
 
-	connBadLogin := mocks.NewAsconn(t)
+	connBadLogin := clustermocks.NewAsconn(t)
 	connBadLogin.On("Login", cPolicy).Return(as.ErrNotAuthenticated)
 	connBadLogin.On("SetTimeout", time.Time{}, cPolicy.Timeout).Return(nil)
 
@@ -73,7 +73,7 @@ func TestNode_NewConnNode(t *testing.T) {
 }
 
 func TestNode_RequestInfo(t *testing.T) {
-	conn := mocks.NewAsconn(t)
+	conn := clustermocks.NewAsconn(t)
 	nodeName := "BB990C28F270008"
 	commands := []any{"node", "statistics"}
 
@@ -97,7 +97,7 @@ func TestNode_RequestInfo(t *testing.T) {
 	conn.AssertExpectations(t)
 	require.Equal(t, expectedRes, actualRes)
 
-	connBadSession := mocks.NewAsconn(t)
+	connBadSession := clustermocks.NewAsconn(t)
 	connBadSession.On("RequestInfo", commands...).Return(nil, as.ErrNotAuthenticated)
 
 	connNodeNeg := &connNode{
