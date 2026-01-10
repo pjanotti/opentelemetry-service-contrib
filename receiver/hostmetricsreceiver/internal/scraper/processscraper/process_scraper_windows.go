@@ -15,7 +15,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/metadata"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/process_ucal"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/processucal"
 )
 
 func (s *processScraper) recordCPUTimeMetric(now pcommon.Timestamp, cpuTime *cpu.TimesStat) {
@@ -23,7 +23,7 @@ func (s *processScraper) recordCPUTimeMetric(now pcommon.Timestamp, cpuTime *cpu
 	s.mb.RecordProcessCPUTimeDataPoint(now, cpuTime.System, metadata.AttributeStateSystem)
 }
 
-func (s *processScraper) recordCPUUtilization(now pcommon.Timestamp, cpuUtilization process_ucal.CPUUtilization) {
+func (s *processScraper) recordCPUUtilization(now pcommon.Timestamp, cpuUtilization processucal.CPUUtilization) {
 	s.mb.RecordProcessCPUUtilizationDataPoint(now, cpuUtilization.User, metadata.AttributeStateUser)
 	s.mb.RecordProcessCPUUtilizationDataPoint(now, cpuUtilization.System, metadata.AttributeStateSystem)
 }
