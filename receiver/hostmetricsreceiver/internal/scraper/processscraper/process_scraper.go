@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/processmetadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/processucal"
 )
 
@@ -45,7 +45,7 @@ const (
 type processScraper struct {
 	settings           scraper.Settings
 	config             *Config
-	mb                 *metadata.MetricsBuilder
+	mb                 *processmetadata.MetricsBuilder
 	includeFS          filterset.FilterSet
 	excludeFS          filterset.FilterSet
 	scrapeProcessDelay time.Duration
@@ -95,7 +95,7 @@ func newProcessScraper(settings scraper.Settings, cfg *Config) (*processScraper,
 }
 
 func (s *processScraper) start(context.Context, component.Host) error {
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings)
+	s.mb = processmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings)
 	return nil
 }
 
@@ -176,8 +176,8 @@ func (s *processScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 			errs.AddPartial(uptimeMetricsLen, fmt.Errorf("error calculating uptime for process %q (pid %v): %w", md.executable.name, md.pid, err))
 		}
 
-		s.mb.EmitForResource(metadata.WithResource(md.buildResource(s.mb.NewResourceBuilder())),
-			metadata.WithStartTimeOverride(pcommon.Timestamp(md.createTime*1e6)))
+		s.mb.EmitForResource(processmetadata.WithResource(md.buildResource(s.mb.NewResourceBuilder())),
+			processmetadata.WithStartTimeOverride(pcommon.Timestamp(md.createTime*1e6)))
 	}
 
 	// Cleanup any [ucal.CPUUtilizationCalculator]s for PIDs that are no longer present
@@ -355,10 +355,10 @@ func (s *processScraper) scrapeAndAppendDiskMetrics(ctx context.Context, now pco
 		return err
 	}
 
-	s.mb.RecordProcessDiskIoDataPoint(now, int64(io.ReadBytes), metadata.AttributeDirectionRead)
-	s.mb.RecordProcessDiskIoDataPoint(now, int64(io.WriteBytes), metadata.AttributeDirectionWrite)
-	s.mb.RecordProcessDiskOperationsDataPoint(now, int64(io.ReadCount), metadata.AttributeDirectionRead)
-	s.mb.RecordProcessDiskOperationsDataPoint(now, int64(io.WriteCount), metadata.AttributeDirectionWrite)
+	s.mb.RecordProcessDiskIoDataPoint(now, int64(io.ReadBytes), processmetadata.AttributeDirectionRead)
+	s.mb.RecordProcessDiskIoDataPoint(now, int64(io.WriteBytes), processmetadata.AttributeDirectionWrite)
+	s.mb.RecordProcessDiskOperationsDataPoint(now, int64(io.ReadCount), processmetadata.AttributeDirectionRead)
+	s.mb.RecordProcessDiskOperationsDataPoint(now, int64(io.WriteCount), processmetadata.AttributeDirectionWrite)
 
 	return nil
 }
@@ -373,8 +373,8 @@ func (s *processScraper) scrapeAndAppendPagingMetric(ctx context.Context, now pc
 		return err
 	}
 
-	s.mb.RecordProcessPagingFaultsDataPoint(now, int64(pageFaultsStat.MajorFaults), metadata.AttributePagingFaultTypeMajor)
-	s.mb.RecordProcessPagingFaultsDataPoint(now, int64(pageFaultsStat.MinorFaults), metadata.AttributePagingFaultTypeMinor)
+	s.mb.RecordProcessPagingFaultsDataPoint(now, int64(pageFaultsStat.MajorFaults), processmetadata.AttributePagingFaultTypeMajor)
+	s.mb.RecordProcessPagingFaultsDataPoint(now, int64(pageFaultsStat.MinorFaults), processmetadata.AttributePagingFaultTypeMinor)
 
 	return nil
 }
@@ -402,8 +402,8 @@ func (s *processScraper) scrapeAndAppendContextSwitchMetrics(ctx context.Context
 		return err
 	}
 
-	s.mb.RecordProcessContextSwitchesDataPoint(now, contextSwitches.Involuntary, metadata.AttributeContextSwitchTypeInvoluntary)
-	s.mb.RecordProcessContextSwitchesDataPoint(now, contextSwitches.Voluntary, metadata.AttributeContextSwitchTypeVoluntary)
+	s.mb.RecordProcessContextSwitchesDataPoint(now, contextSwitches.Involuntary, processmetadata.AttributeContextSwitchTypeInvoluntary)
+	s.mb.RecordProcessContextSwitchesDataPoint(now, contextSwitches.Voluntary, processmetadata.AttributeContextSwitchTypeVoluntary)
 
 	return nil
 }

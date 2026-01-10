@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/processmetadata"
 )
 
 func TestCreateDefaultConfig(t *testing.T) {
@@ -23,7 +23,7 @@ func TestCreateResourceMetricsScraper(t *testing.T) {
 	factory := NewFactory()
 	cfg := &Config{}
 
-	scraper, err := factory.CreateMetrics(t.Context(), scrapertest.NewNopSettings(metadata.Type), cfg)
+	scraper, err := factory.CreateMetrics(t.Context(), scrapertest.NewNopSettings(processmetadata.Type), cfg)
 
 	if runtime.GOOS == "linux" || runtime.GOOS == "windows" || runtime.GOOS == "darwin" || runtime.GOOS == "freebsd" {
 		assert.NoError(t, err)

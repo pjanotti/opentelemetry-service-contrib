@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/gopsutilenv"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/processmetadata"
 )
 
 // processMetadata stores process related metadata along
@@ -45,7 +45,7 @@ type commandMetadata struct {
 	commandLineSlice []string
 }
 
-func (m *processMetadata) buildResource(rb *metadata.ResourceBuilder) pcommon.Resource {
+func (m *processMetadata) buildResource(rb *processmetadata.ResourceBuilder) pcommon.Resource {
 	rb.SetProcessPid(int64(m.pid))
 	rb.SetProcessParentPid(int64(m.parentPid))
 	rb.SetProcessExecutableName(m.executable.name)

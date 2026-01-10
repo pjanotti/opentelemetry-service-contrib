@@ -12,20 +12,20 @@ import (
 	"github.com/shirou/gopsutil/v4/cpu"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/processmetadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/processucal"
 )
 
 func (s *processScraper) recordCPUTimeMetric(now pcommon.Timestamp, cpuTime *cpu.TimesStat) {
-	s.mb.RecordProcessCPUTimeDataPoint(now, cpuTime.User, metadata.AttributeStateUser)
-	s.mb.RecordProcessCPUTimeDataPoint(now, cpuTime.System, metadata.AttributeStateSystem)
-	s.mb.RecordProcessCPUTimeDataPoint(now, cpuTime.Iowait, metadata.AttributeStateWait)
+	s.mb.RecordProcessCPUTimeDataPoint(now, cpuTime.User, processmetadata.AttributeStateUser)
+	s.mb.RecordProcessCPUTimeDataPoint(now, cpuTime.System, processmetadata.AttributeStateSystem)
+	s.mb.RecordProcessCPUTimeDataPoint(now, cpuTime.Iowait, processmetadata.AttributeStateWait)
 }
 
 func (s *processScraper) recordCPUUtilization(now pcommon.Timestamp, cpuUtilization processucal.CPUUtilization) {
-	s.mb.RecordProcessCPUUtilizationDataPoint(now, cpuUtilization.User, metadata.AttributeStateUser)
-	s.mb.RecordProcessCPUUtilizationDataPoint(now, cpuUtilization.System, metadata.AttributeStateSystem)
-	s.mb.RecordProcessCPUUtilizationDataPoint(now, cpuUtilization.Iowait, metadata.AttributeStateWait)
+	s.mb.RecordProcessCPUUtilizationDataPoint(now, cpuUtilization.User, processmetadata.AttributeStateUser)
+	s.mb.RecordProcessCPUUtilizationDataPoint(now, cpuUtilization.System, processmetadata.AttributeStateSystem)
+	s.mb.RecordProcessCPUUtilizationDataPoint(now, cpuUtilization.Iowait, processmetadata.AttributeStateWait)
 }
 
 func getProcessName(ctx context.Context, proc processHandle, _ string) (string, error) {

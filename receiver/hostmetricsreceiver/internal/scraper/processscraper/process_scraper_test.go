@@ -26,7 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processscraper/internal/processmetadata"
 )
 
 func skipTestOnUnsupportedOS(t *testing.T) {
@@ -35,7 +35,7 @@ func skipTestOnUnsupportedOS(t *testing.T) {
 	}
 }
 
-func enableLinuxOnlyMetrics(ms *metadata.MetricsConfig) {
+func enableLinuxOnlyMetrics(ms *processmetadata.MetricsConfig) {
 	if runtime.GOOS != "linux" {
 		return
 	}
@@ -51,7 +51,7 @@ func TestScrape(t *testing.T) {
 	type testCase struct {
 		name                string
 		mutateScraper       func(*processScraper)
-		mutateMetricsConfig func(*testing.T, *metadata.MetricsConfig)
+		mutateMetricsConfig func(*testing.T, *processmetadata.MetricsConfig)
 	}
 	testCases := []testCase{
 		{
@@ -59,7 +59,7 @@ func TestScrape(t *testing.T) {
 		},
 		{
 			name: "Enable Linux-only metrics",
-			mutateMetricsConfig: func(t *testing.T, ms *metadata.MetricsConfig) {
+			mutateMetricsConfig: func(t *testing.T, ms *processmetadata.MetricsConfig) {
 				if runtime.GOOS != "linux" {
 					t.Skipf("skipping test on %v", runtime.GOOS)
 				}
@@ -69,13 +69,13 @@ func TestScrape(t *testing.T) {
 		},
 		{
 			name: "Enable memory utilization",
-			mutateMetricsConfig: func(_ *testing.T, ms *metadata.MetricsConfig) {
+			mutateMetricsConfig: func(_ *testing.T, ms *processmetadata.MetricsConfig) {
 				ms.ProcessMemoryUtilization.Enabled = true
 			},
 		},
 		{
 			name: "Enable uptime",
-			mutateMetricsConfig: func(_ *testing.T, ms *metadata.MetricsConfig) {
+			mutateMetricsConfig: func(_ *testing.T, ms *processmetadata.MetricsConfig) {
 				ms.ProcessUptime.Enabled = true
 			},
 		},
@@ -86,7 +86,7 @@ func TestScrape(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			metricsBuilderConfig := metadata.DefaultMetricsBuilderConfig()
+			metricsBuilderConfig := processmetadata.DefaultMetricsBuilderConfig()
 			if runtime.GOOS == "darwin" {
 				// disable darwin unsupported default metric
 				metricsBuilderConfig.Metrics.ProcessDiskIo.Enabled = false
@@ -107,7 +107,7 @@ func TestScrape(t *testing.T) {
 			}
 			ctx := context.WithValue(t.Context(), common.EnvKey, envMap)
 			ctx = clock.Context(ctx, clock.NewMock(time.Unix(200, 0)))
-			scraper, err := newProcessScraper(scrapertest.NewNopSettings(metadata.Type), cfg)
+			scraper, err := newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), cfg)
 			if test.mutateScraper != nil {
 				test.mutateScraper(scraper)
 			}
@@ -218,12 +218,12 @@ func assertCPUTimeMetricValid(t *testing.T, resourceMetrics pmetric.ResourceMetr
 		internal.AssertSumMetricStartTimeEquals(t, cpuTimeMetric, startTime)
 	}
 	internal.AssertSumMetricHasAttributeValue(t, cpuTimeMetric, 0, "state",
-		pcommon.NewValueStr(metadata.AttributeStateUser.String()))
+		pcommon.NewValueStr(processmetadata.AttributeStateUser.String()))
 	internal.AssertSumMetricHasAttributeValue(t, cpuTimeMetric, 1, "state",
-		pcommon.NewValueStr(metadata.AttributeStateSystem.String()))
+		pcommon.NewValueStr(processmetadata.AttributeStateSystem.String()))
 	if runtime.GOOS == "linux" {
 		internal.AssertSumMetricHasAttributeValue(t, cpuTimeMetric, 2, "state",
-			pcommon.NewValueStr(metadata.AttributeStateWait.String()))
+			pcommon.NewValueStr(processmetadata.AttributeStateWait.String()))
 	}
 }
 
@@ -233,10 +233,10 @@ func assertCPUUtilizationMetricValid(t *testing.T, resourceMetrics pmetric.Resou
 		internal.AssertGaugeMetricStartTimeEquals(t, metric, startTime)
 	}
 
-	internal.AssertGaugeMetricHasAttributeValue(t, metric, 0, "state", pcommon.NewValueStr(metadata.AttributeStateUser.String()))
-	internal.AssertGaugeMetricHasAttributeValue(t, metric, 1, "state", pcommon.NewValueStr(metadata.AttributeStateSystem.String()))
+	internal.AssertGaugeMetricHasAttributeValue(t, metric, 0, "state", pcommon.NewValueStr(processmetadata.AttributeStateUser.String()))
+	internal.AssertGaugeMetricHasAttributeValue(t, metric, 1, "state", pcommon.NewValueStr(processmetadata.AttributeStateSystem.String()))
 	if runtime.GOOS == "linux" {
-		internal.AssertGaugeMetricHasAttributeValue(t, metric, 2, "state", pcommon.NewValueStr(metadata.AttributeStateWait.String()))
+		internal.AssertGaugeMetricHasAttributeValue(t, metric, 2, "state", pcommon.NewValueStr(processmetadata.AttributeStateWait.String()))
 	}
 }
 
@@ -254,8 +254,8 @@ func assertMemoryUsageMetricValid(t *testing.T, resourceMetrics pmetric.Resource
 
 func assertPagingMetricValid(t *testing.T, resourceMetrics pmetric.ResourceMetricsSlice, startTime pcommon.Timestamp) {
 	pagingFaultsMetric := getMetric(t, "process.paging.faults", resourceMetrics)
-	internal.AssertSumMetricHasAttributeValue(t, pagingFaultsMetric, 0, "type", pcommon.NewValueStr(metadata.AttributePagingFaultTypeMajor.String()))
-	internal.AssertSumMetricHasAttributeValue(t, pagingFaultsMetric, 1, "type", pcommon.NewValueStr(metadata.AttributePagingFaultTypeMinor.String()))
+	internal.AssertSumMetricHasAttributeValue(t, pagingFaultsMetric, 0, "type", pcommon.NewValueStr(processmetadata.AttributePagingFaultTypeMajor.String()))
+	internal.AssertSumMetricHasAttributeValue(t, pagingFaultsMetric, 1, "type", pcommon.NewValueStr(processmetadata.AttributePagingFaultTypeMinor.String()))
 
 	if startTime != 0 {
 		internal.AssertSumMetricStartTimeEquals(t, pagingFaultsMetric, startTime)
@@ -306,9 +306,9 @@ func assertDiskIoMetricValid(t *testing.T, resourceMetrics pmetric.ResourceMetri
 		internal.AssertSumMetricStartTimeEquals(t, diskIoMetric, startTime)
 	}
 	internal.AssertSumMetricHasAttributeValue(t, diskIoMetric, 0, "direction",
-		pcommon.NewValueStr(metadata.AttributeDirectionRead.String()))
+		pcommon.NewValueStr(processmetadata.AttributeDirectionRead.String()))
 	internal.AssertSumMetricHasAttributeValue(t, diskIoMetric, 1, "direction",
-		pcommon.NewValueStr(metadata.AttributeDirectionWrite.String()))
+		pcommon.NewValueStr(processmetadata.AttributeDirectionWrite.String()))
 }
 
 func assertDiskOperationsMetricValid(t *testing.T, resourceMetrics pmetric.ResourceMetricsSlice, startTime pcommon.Timestamp) {
@@ -317,9 +317,9 @@ func assertDiskOperationsMetricValid(t *testing.T, resourceMetrics pmetric.Resou
 		internal.AssertSumMetricStartTimeEquals(t, diskOperationsMetric, startTime)
 	}
 	internal.AssertSumMetricHasAttributeValue(t, diskOperationsMetric, 0, "direction",
-		pcommon.NewValueStr(metadata.AttributeDirectionRead.String()))
+		pcommon.NewValueStr(processmetadata.AttributeDirectionRead.String()))
 	internal.AssertSumMetricHasAttributeValue(t, diskOperationsMetric, 1, "direction",
-		pcommon.NewValueStr(metadata.AttributeDirectionWrite.String()))
+		pcommon.NewValueStr(processmetadata.AttributeDirectionWrite.String()))
 }
 
 func assertContextSwitchMetricValid(t *testing.T, resourceMetrics pmetric.ResourceMetricsSlice, startTime pcommon.Timestamp) {
@@ -331,9 +331,9 @@ func assertContextSwitchMetricValid(t *testing.T, resourceMetrics pmetric.Resour
 	}
 
 	internal.AssertSumMetricHasAttributeValue(t, contextSwitchMetric, 0, "type",
-		pcommon.NewValueStr(metadata.AttributeContextSwitchTypeInvoluntary.String()))
+		pcommon.NewValueStr(processmetadata.AttributeContextSwitchTypeInvoluntary.String()))
 	internal.AssertSumMetricHasAttributeValue(t, contextSwitchMetric, 1, "type",
-		pcommon.NewValueStr(metadata.AttributeContextSwitchTypeVoluntary.String()))
+		pcommon.NewValueStr(processmetadata.AttributeContextSwitchTypeVoluntary.String()))
 }
 
 func assertOpenFileDescriptorMetricValid(t *testing.T, resourceMetrics pmetric.ResourceMetricsSlice, startTime pcommon.Timestamp) {
@@ -388,11 +388,11 @@ func getMetricSlice(t *testing.T, rm pmetric.ResourceMetrics) pmetric.MetricSlic
 func TestScrapeMetrics_NewError(t *testing.T) {
 	skipTestOnUnsupportedOS(t)
 
-	_, err := newProcessScraper(scrapertest.NewNopSettings(metadata.Type), &Config{Include: MatchConfig{Names: []string{"test"}}, MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()})
+	_, err := newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), &Config{Include: MatchConfig{Names: []string{"test"}}, MetricsBuilderConfig: processmetadata.DefaultMetricsBuilderConfig()})
 	require.Error(t, err)
 	require.Regexp(t, "^error creating process include filters:", err.Error())
 
-	_, err = newProcessScraper(scrapertest.NewNopSettings(metadata.Type), &Config{Exclude: MatchConfig{Names: []string{"test"}}, MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()})
+	_, err = newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), &Config{Exclude: MatchConfig{Names: []string{"test"}}, MetricsBuilderConfig: processmetadata.DefaultMetricsBuilderConfig()})
 	require.Error(t, err)
 	require.Regexp(t, "^error creating process exclude filters:", err.Error())
 }
@@ -400,7 +400,7 @@ func TestScrapeMetrics_NewError(t *testing.T) {
 func TestScrapeMetrics_GetProcessesError(t *testing.T) {
 	skipTestOnUnsupportedOS(t)
 
-	scraper, err := newProcessScraper(scrapertest.NewNopSettings(metadata.Type), &Config{MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()})
+	scraper, err := newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), &Config{MetricsBuilderConfig: processmetadata.DefaultMetricsBuilderConfig()})
 	require.NoError(t, err, "Failed to create process scraper: %v", err)
 
 	scraper.getProcessHandles = func(context.Context) (processHandles, error) { return nil, errors.New("err1") }
@@ -657,7 +657,7 @@ func TestScrapeMetrics_Filtered(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			scrapeProcessDelay, _ := time.ParseDuration(test.scrapeProcessDelay)
-			metricsBuilderConfig := metadata.DefaultMetricsBuilderConfig()
+			metricsBuilderConfig := processmetadata.DefaultMetricsBuilderConfig()
 			enableLinuxOnlyMetrics(&metricsBuilderConfig.Metrics)
 
 			config := &Config{
@@ -678,7 +678,7 @@ func TestScrapeMetrics_Filtered(t *testing.T) {
 				}
 			}
 
-			scraper, err := newProcessScraper(scrapertest.NewNopSettings(metadata.Type), config)
+			scraper, err := newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), config)
 			require.NoError(t, err, "Failed to create process scraper: %v", err)
 			err = scraper.start(t.Context(), componenttest.NewNopHost())
 			require.NoError(t, err, "Failed to initialize process scraper: %v", err)
@@ -711,7 +711,7 @@ func TestScrapeMetrics_Filtered(t *testing.T) {
 	}
 }
 
-func enableOptionalMetrics(ms *metadata.MetricsConfig) {
+func enableOptionalMetrics(ms *processmetadata.MetricsConfig) {
 	ms.ProcessMemoryUtilization.Enabled = true
 	ms.ProcessThreads.Enabled = true
 	ms.ProcessPagingFaults.Enabled = true
@@ -902,7 +902,7 @@ func TestScrapeMetrics_ProcessErrors(t *testing.T) {
 				}
 			}
 
-			metricsBuilderConfig := metadata.DefaultMetricsBuilderConfig()
+			metricsBuilderConfig := processmetadata.DefaultMetricsBuilderConfig()
 			if runtime.GOOS != "darwin" {
 				enableOptionalMetrics(&metricsBuilderConfig.Metrics)
 			} else {
@@ -911,7 +911,7 @@ func TestScrapeMetrics_ProcessErrors(t *testing.T) {
 				metricsBuilderConfig.Metrics.ProcessDiskIo.Enabled = false
 			}
 
-			scraper, err := newProcessScraper(scrapertest.NewNopSettings(metadata.Type), &Config{MetricsBuilderConfig: metricsBuilderConfig})
+			scraper, err := newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), &Config{MetricsBuilderConfig: metricsBuilderConfig})
 			require.NoError(t, err, "Failed to create process scraper: %v", err)
 			err = scraper.start(t.Context(), componenttest.NewNopHost())
 			require.NoError(t, err, "Failed to initialize process scraper: %v", err)
@@ -1180,7 +1180,7 @@ func TestScrapeMetrics_MuteErrorFlags(t *testing.T) {
 			if test.skipTestCase {
 				t.Skipf("skipping test %v on %v", test.name, runtime.GOOS)
 			}
-			config := &Config{MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()}
+			config := &Config{MetricsBuilderConfig: processmetadata.DefaultMetricsBuilderConfig()}
 			if !test.omitConfigField {
 				config.MuteProcessNameError = test.muteProcessNameError
 				config.MuteProcessExeError = test.muteProcessExeError
@@ -1188,7 +1188,7 @@ func TestScrapeMetrics_MuteErrorFlags(t *testing.T) {
 				config.MuteProcessUserError = test.muteProcessUserError
 				config.MuteProcessAllErrors = test.muteProcessAllErrors
 			}
-			scraper, err := newProcessScraper(scrapertest.NewNopSettings(metadata.Type), config)
+			scraper, err := newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), config)
 			require.NoError(t, err, "Failed to create process scraper: %v", err)
 			err = scraper.start(t.Context(), componenttest.NewNopHost())
 			require.NoError(t, err, "Failed to initialize process scraper: %v", err)
@@ -1248,7 +1248,7 @@ func newErroringHandleMock() *processHandleMock {
 func TestScrapeMetrics_DontCheckDisabledMetrics(t *testing.T) {
 	skipTestOnUnsupportedOS(t)
 
-	metricsBuilderConfig := metadata.DefaultMetricsBuilderConfig()
+	metricsBuilderConfig := processmetadata.DefaultMetricsBuilderConfig()
 
 	metricsBuilderConfig.Metrics.ProcessCPUTime.Enabled = false
 	metricsBuilderConfig.Metrics.ProcessDiskIo.Enabled = false
@@ -1259,7 +1259,7 @@ func TestScrapeMetrics_DontCheckDisabledMetrics(t *testing.T) {
 	t.Run("Metrics don't log errors when disabled", func(t *testing.T) {
 		config := &Config{MetricsBuilderConfig: metricsBuilderConfig}
 
-		scraper, err := newProcessScraper(scrapertest.NewNopSettings(metadata.Type), config)
+		scraper, err := newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), config)
 		require.NoError(t, err, "Failed to create process scraper: %v", err)
 		err = scraper.start(t.Context(), componenttest.NewNopHost())
 		require.NoError(t, err, "Failed to initialize process scraper: %v", err)
@@ -1317,7 +1317,7 @@ func TestScrapeMetrics_CpuUtilizationWhenCpuTimesIsDisabled(t *testing.T) {
 	for i := range testCases {
 		testCase := testCases[i]
 		t.Run(testCase.name, func(t *testing.T) {
-			metricsBuilderConfig := metadata.DefaultMetricsBuilderConfig()
+			metricsBuilderConfig := processmetadata.DefaultMetricsBuilderConfig()
 
 			metricsBuilderConfig.Metrics.ProcessCPUTime.Enabled = testCase.processCPUTimes
 			metricsBuilderConfig.Metrics.ProcessCPUUtilization.Enabled = testCase.processCPUUtilization
@@ -1329,7 +1329,7 @@ func TestScrapeMetrics_CpuUtilizationWhenCpuTimesIsDisabled(t *testing.T) {
 
 			config := &Config{MetricsBuilderConfig: metricsBuilderConfig}
 
-			scraper, err := newProcessScraper(scrapertest.NewNopSettings(metadata.Type), config)
+			scraper, err := newProcessScraper(scrapertest.NewNopSettings(processmetadata.Type), config)
 			require.NoError(t, err, "Failed to create process scraper: %v", err)
 			err = scraper.start(t.Context(), componenttest.NewNopHost())
 			require.NoError(t, err, "Failed to initialize process scraper: %v", err)
