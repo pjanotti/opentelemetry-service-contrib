@@ -8,7 +8,7 @@ package filesystemscraper // import "github.com/open-telemetry/opentelemetry-col
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper/internal/filesystemmetadata"
 )
 
 const fileSystemStatesLen = 3
@@ -19,17 +19,17 @@ func (s *filesystemsScraper) recordFileSystemUsageMetric(now pcommon.Timestamp, 
 			now, int64(deviceUsage.usage.Used),
 			deviceUsage.partition.Device, getMountMode(deviceUsage.partition.Opts), deviceUsage.partition.Mountpoint,
 			deviceUsage.partition.Fstype,
-			metadata.AttributeStateUsed)
+			filesystemmetadata.AttributeStateUsed)
 		s.mb.RecordSystemFilesystemUsageDataPoint(
 			now, int64(deviceUsage.usage.Free),
 			deviceUsage.partition.Device, getMountMode(deviceUsage.partition.Opts),
 			deviceUsage.partition.Mountpoint, deviceUsage.partition.Fstype,
-			metadata.AttributeStateFree)
+			filesystemmetadata.AttributeStateFree)
 		s.mb.RecordSystemFilesystemUsageDataPoint(
 			now, int64(deviceUsage.usage.Total-deviceUsage.usage.Used-deviceUsage.usage.Free),
 			deviceUsage.partition.Device, getMountMode(deviceUsage.partition.Opts),
 			deviceUsage.partition.Mountpoint, deviceUsage.partition.Fstype,
-			metadata.AttributeStateReserved)
+			filesystemmetadata.AttributeStateReserved)
 		s.mb.RecordSystemFilesystemUtilizationDataPoint(
 			now, deviceUsage.usage.UsedPercent/100.0,
 			deviceUsage.partition.Device, getMountMode(deviceUsage.partition.Opts),
@@ -44,10 +44,10 @@ func (s *filesystemsScraper) recordSystemSpecificMetrics(now pcommon.Timestamp, 
 		s.mb.RecordSystemFilesystemInodesUsageDataPoint(
 			now, int64(deviceUsage.usage.InodesUsed), deviceUsage.partition.Device,
 			getMountMode(deviceUsage.partition.Opts), deviceUsage.partition.Mountpoint,
-			deviceUsage.partition.Fstype, metadata.AttributeStateUsed)
+			deviceUsage.partition.Fstype, filesystemmetadata.AttributeStateUsed)
 		s.mb.RecordSystemFilesystemInodesUsageDataPoint(
 			now, int64(deviceUsage.usage.InodesFree), deviceUsage.partition.Device,
 			getMountMode(deviceUsage.partition.Opts), deviceUsage.partition.Mountpoint,
-			deviceUsage.partition.Fstype, metadata.AttributeStateFree)
+			deviceUsage.partition.Fstype, filesystemmetadata.AttributeStateFree)
 	}
 }

@@ -7,13 +7,13 @@ import (
 	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper/internal/filesystemmetadata"
 )
 
 // Config relating to FileSystem Metric Scraper.
 type Config struct {
 	// MetricsBuilderConfig allows to customize scraped metrics/attributes representation.
-	metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	filesystemmetadata.MetricsBuilderConfig `mapstructure:",squash"`
 
 	// IncludeVirtualFS will also capture filesystems such as tmpfs, ramfs
 	// and other filesystem types that do no have an associated physical device.

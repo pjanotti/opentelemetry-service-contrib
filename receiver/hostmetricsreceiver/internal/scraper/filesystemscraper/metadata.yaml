@@ -1,4 +1,5 @@
 type: filesystem
+generated_package_name: filesystemmetadata
 
 status:
   class: scraper

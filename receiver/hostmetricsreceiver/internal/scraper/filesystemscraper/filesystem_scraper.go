@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 	"go.uber.org/zap"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/filesystemscraper/internal/filesystemmetadata"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
 type filesystemsScraper struct {
 	settings scraper.Settings
 	config   *Config
-	mb       *metadata.MetricsBuilder
+	mb       *filesystemmetadata.MetricsBuilder
 	fsFilter fsFilter
 
 	// for mocking gopsutil disk.Partitions & disk.Usage
@@ -64,7 +64,7 @@ func (s *filesystemsScraper) start(ctx context.Context, _ component.Host) error 
 		return err
 	}
 
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb = filesystemmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, filesystemmetadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
 	return nil
 }
 
