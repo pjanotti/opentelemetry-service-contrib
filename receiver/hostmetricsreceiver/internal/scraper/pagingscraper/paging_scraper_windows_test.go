@@ -17,7 +17,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/winperfcounters"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper/internal/pagingmetadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/testmocks"
 )
 
@@ -103,10 +103,10 @@ func TestScrape_Errors(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			metricsConfig := metadata.DefaultMetricsBuilderConfig()
+			metricsConfig := pagingmetadata.DefaultMetricsBuilderConfig()
 			metricsConfig.Metrics.SystemPagingUtilization.Enabled = true
 
-			scraper := newPagingScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &Config{MetricsBuilderConfig: metricsConfig})
+			scraper := newPagingScraper(t.Context(), scrapertest.NewNopSettings(pagingmetadata.Type), &Config{MetricsBuilderConfig: metricsConfig})
 			if test.getPageFileStats != nil {
 				scraper.pageFileStats = test.getPageFileStats
 			}
@@ -186,16 +186,16 @@ func TestScrape_Errors(t *testing.T) {
 			for i := 0; i < metrics.Len(); i++ {
 				metric := metrics.At(i)
 				switch metric.Name() {
-				case metadata.MetricsInfo.SystemPagingFaults.Name:
+				case pagingmetadata.MetricsInfo.SystemPagingFaults.Name:
 					assert.Equal(t, defaultPageMajPerSec, metric.Sum().DataPoints().At(0).IntValue())
 					assert.Equal(t, defaultPageFaultsPerSec-defaultPageMajPerSec, metric.Sum().DataPoints().At(1).IntValue())
-				case metadata.MetricsInfo.SystemPagingOperations.Name:
+				case pagingmetadata.MetricsInfo.SystemPagingOperations.Name:
 					assert.Equal(t, defaultPageReadsPerSec, metric.Sum().DataPoints().At(0).IntValue())
 					assert.Equal(t, defaultPageWritesPerSec, metric.Sum().DataPoints().At(1).IntValue())
-				case metadata.MetricsInfo.SystemPagingUsage.Name:
+				case pagingmetadata.MetricsInfo.SystemPagingUsage.Name:
 					assert.Equal(t, test.expectedUsedValue, metric.Sum().DataPoints().At(0).IntValue())
 					assert.Equal(t, test.expectedFreeValue, metric.Sum().DataPoints().At(1).IntValue())
-				case metadata.MetricsInfo.SystemPagingUtilization.Name:
+				case pagingmetadata.MetricsInfo.SystemPagingUtilization.Name:
 					assert.Equal(t, test.expectedUtilizationUsedValue, metric.Gauge().DataPoints().At(0).DoubleValue())
 					assert.Equal(t, test.expectedUtilizationFreeValue, metric.Gauge().DataPoints().At(1).DoubleValue())
 				default:
@@ -208,9 +208,9 @@ func TestScrape_Errors(t *testing.T) {
 
 func TestPagingScrapeWithRealData(t *testing.T) {
 	config := Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: pagingmetadata.DefaultMetricsBuilderConfig(),
 	}
-	scraper := newPagingScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &config)
+	scraper := newPagingScraper(t.Context(), scrapertest.NewNopSettings(pagingmetadata.Type), &config)
 
 	err := scraper.start(t.Context(), componenttest.NewNopHost())
 	require.NoError(t, err, "Failed to start the paging scraper")
@@ -221,9 +221,9 @@ func TestPagingScrapeWithRealData(t *testing.T) {
 
 	// Expected metric names for paging scraper.
 	expectedMetrics := map[string]bool{
-		metadata.MetricsInfo.SystemPagingOperations.Name: false,
-		metadata.MetricsInfo.SystemPagingUsage.Name:      false,
-		metadata.MetricsInfo.SystemPagingFaults.Name:     false,
+		pagingmetadata.MetricsInfo.SystemPagingOperations.Name: false,
+		pagingmetadata.MetricsInfo.SystemPagingUsage.Name:      false,
+		pagingmetadata.MetricsInfo.SystemPagingFaults.Name:     false,
 	}
 
 	internal.AssertExpectedMetrics(t, expectedMetrics, metrics)
@@ -250,10 +250,10 @@ func TestStart_Error(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			metricsConfig := metadata.DefaultMetricsBuilderConfig()
+			metricsConfig := pagingmetadata.DefaultMetricsBuilderConfig()
 			metricsConfig.Metrics.SystemPagingUtilization.Enabled = true
 
-			scraper := newPagingScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &Config{MetricsBuilderConfig: metricsConfig})
+			scraper := newPagingScraper(t.Context(), scrapertest.NewNopSettings(pagingmetadata.Type), &Config{MetricsBuilderConfig: metricsConfig})
 
 			if tc.newPerfCounterFactory != nil {
 				scraper.perfCounterFactory = tc.newPerfCounterFactory

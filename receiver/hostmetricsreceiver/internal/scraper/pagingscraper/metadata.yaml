@@ -1,4 +1,5 @@
 type: paging
+generated_package_name: pagingmetadata
 
 status:
   class: scraper

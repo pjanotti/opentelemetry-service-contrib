@@ -18,7 +18,7 @@ import (
 	"go.opentelemetry.io/collector/scraper"
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper/internal/pagingmetadata"
 )
 
 const (
@@ -30,7 +30,7 @@ const (
 type pagingScraper struct {
 	settings scraper.Settings
 	config   *Config
-	mb       *metadata.MetricsBuilder
+	mb       *pagingmetadata.MetricsBuilder
 
 	// for mocking
 	bootTime         func(context.Context) (uint64, error)
@@ -55,7 +55,7 @@ func (s *pagingScraper) start(ctx context.Context, _ component.Host) error {
 		return err
 	}
 
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb = pagingmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, pagingmetadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
 	return nil
 }
 
@@ -89,20 +89,20 @@ func (s *pagingScraper) scrapePagingUsageMetric() error {
 
 func (s *pagingScraper) recordPagingUsageDataPoints(now pcommon.Timestamp, pageFileStats []*pageFileStats) {
 	for _, pageFile := range pageFileStats {
-		s.mb.RecordSystemPagingUsageDataPoint(now, int64(pageFile.usedBytes), pageFile.deviceName, metadata.AttributeStateUsed)
-		s.mb.RecordSystemPagingUsageDataPoint(now, int64(pageFile.freeBytes), pageFile.deviceName, metadata.AttributeStateFree)
+		s.mb.RecordSystemPagingUsageDataPoint(now, int64(pageFile.usedBytes), pageFile.deviceName, pagingmetadata.AttributeStateUsed)
+		s.mb.RecordSystemPagingUsageDataPoint(now, int64(pageFile.freeBytes), pageFile.deviceName, pagingmetadata.AttributeStateFree)
 		if pageFile.cachedBytes != nil {
-			s.mb.RecordSystemPagingUsageDataPoint(now, int64(*pageFile.cachedBytes), pageFile.deviceName, metadata.AttributeStateCached)
+			s.mb.RecordSystemPagingUsageDataPoint(now, int64(*pageFile.cachedBytes), pageFile.deviceName, pagingmetadata.AttributeStateCached)
 		}
 	}
 }
 
 func (s *pagingScraper) recordPagingUtilizationDataPoints(now pcommon.Timestamp, pageFileStats []*pageFileStats) {
 	for _, pageFile := range pageFileStats {
-		s.mb.RecordSystemPagingUtilizationDataPoint(now, float64(pageFile.usedBytes)/float64(pageFile.totalBytes), pageFile.deviceName, metadata.AttributeStateUsed)
-		s.mb.RecordSystemPagingUtilizationDataPoint(now, float64(pageFile.freeBytes)/float64(pageFile.totalBytes), pageFile.deviceName, metadata.AttributeStateFree)
+		s.mb.RecordSystemPagingUtilizationDataPoint(now, float64(pageFile.usedBytes)/float64(pageFile.totalBytes), pageFile.deviceName, pagingmetadata.AttributeStateUsed)
+		s.mb.RecordSystemPagingUtilizationDataPoint(now, float64(pageFile.freeBytes)/float64(pageFile.totalBytes), pageFile.deviceName, pagingmetadata.AttributeStateFree)
 		if pageFile.cachedBytes != nil {
-			s.mb.RecordSystemPagingUtilizationDataPoint(now, float64(*pageFile.cachedBytes)/float64(pageFile.totalBytes), pageFile.deviceName, metadata.AttributeStateCached)
+			s.mb.RecordSystemPagingUtilizationDataPoint(now, float64(*pageFile.cachedBytes)/float64(pageFile.totalBytes), pageFile.deviceName, pagingmetadata.AttributeStateCached)
 		}
 	}
 }
@@ -120,13 +120,13 @@ func (s *pagingScraper) scrapePagingMetrics(ctx context.Context) error {
 }
 
 func (s *pagingScraper) recordPagingOperationsDataPoints(now pcommon.Timestamp, swap *mem.SwapMemoryStat) {
-	s.mb.RecordSystemPagingOperationsDataPoint(now, int64(swap.Sin), metadata.AttributeDirectionPageIn, metadata.AttributeTypeMajor)
-	s.mb.RecordSystemPagingOperationsDataPoint(now, int64(swap.Sout), metadata.AttributeDirectionPageOut, metadata.AttributeTypeMajor)
-	s.mb.RecordSystemPagingOperationsDataPoint(now, int64(swap.PgIn), metadata.AttributeDirectionPageIn, metadata.AttributeTypeMinor)
-	s.mb.RecordSystemPagingOperationsDataPoint(now, int64(swap.PgOut), metadata.AttributeDirectionPageOut, metadata.AttributeTypeMinor)
+	s.mb.RecordSystemPagingOperationsDataPoint(now, int64(swap.Sin), pagingmetadata.AttributeDirectionPageIn, pagingmetadata.AttributeTypeMajor)
+	s.mb.RecordSystemPagingOperationsDataPoint(now, int64(swap.Sout), pagingmetadata.AttributeDirectionPageOut, pagingmetadata.AttributeTypeMajor)
+	s.mb.RecordSystemPagingOperationsDataPoint(now, int64(swap.PgIn), pagingmetadata.AttributeDirectionPageIn, pagingmetadata.AttributeTypeMinor)
+	s.mb.RecordSystemPagingOperationsDataPoint(now, int64(swap.PgOut), pagingmetadata.AttributeDirectionPageOut, pagingmetadata.AttributeTypeMinor)
 }
 
 func (s *pagingScraper) recordPageFaultsDataPoints(now pcommon.Timestamp, swap *mem.SwapMemoryStat) {
-	s.mb.RecordSystemPagingFaultsDataPoint(now, int64(swap.PgMajFault), metadata.AttributeTypeMajor)
-	s.mb.RecordSystemPagingFaultsDataPoint(now, int64(swap.PgFault-swap.PgMajFault), metadata.AttributeTypeMinor)
+	s.mb.RecordSystemPagingFaultsDataPoint(now, int64(swap.PgMajFault), pagingmetadata.AttributeTypeMajor)
+	s.mb.RecordSystemPagingFaultsDataPoint(now, int64(swap.PgFault-swap.PgMajFault), pagingmetadata.AttributeTypeMinor)
 }

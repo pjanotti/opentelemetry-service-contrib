@@ -4,11 +4,11 @@
 package pagingscraper // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper"
 
 import (
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper/internal/pagingmetadata"
 )
 
 // Config relating to Paging Metric Scraper.
 type Config struct {
 	// MetricsBuilderConfig allows customizing scraped metrics/attributes representation.
-	metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	pagingmetadata.MetricsBuilderConfig `mapstructure:",squash"`
 }

@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/pagingscraper/internal/pagingmetadata"
 )
 
 func TestScrape_Errors(t *testing.T) {
@@ -53,7 +53,7 @@ func TestScrape_Errors(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			scraper := newPagingScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &Config{})
+			scraper := newPagingScraper(t.Context(), scrapertest.NewNopSettings(pagingmetadata.Type), &Config{})
 			if test.virtualMemoryFunc != nil {
 				scraper.getPageFileStats = test.virtualMemoryFunc
 			}
