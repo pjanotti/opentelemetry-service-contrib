@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/cpuucal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/cpumetadata"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 type cpuScraper struct {
 	settings scraper.Settings
 	config   *Config
-	mb       *metadata.MetricsBuilder
+	mb       *cpumetadata.MetricsBuilder
 	ucal     *cpuucal.CPUUtilizationCalculator
 
 	// for mocking
@@ -53,7 +53,7 @@ func (s *cpuScraper) start(ctx context.Context, _ component.Host) error {
 	if err != nil {
 		return err
 	}
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb = cpumetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, cpumetadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
 	return nil
 }
 

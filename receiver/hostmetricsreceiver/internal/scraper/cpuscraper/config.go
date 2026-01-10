@@ -4,10 +4,10 @@
 package cpuscraper // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper"
 
 import (
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/cpumetadata"
 )
 
 // Config relating to CPU Metric Scraper.
 type Config struct {
-	metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	cpumetadata.MetricsBuilderConfig `mapstructure:",squash"`
 }

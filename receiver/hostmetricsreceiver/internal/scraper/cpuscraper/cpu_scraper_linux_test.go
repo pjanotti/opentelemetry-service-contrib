@@ -15,7 +15,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/cpuscraper/internal/cpumetadata"
 )
 
 func TestScrape_CpuFrequency(t *testing.T) {
@@ -39,11 +39,11 @@ func TestScrape_CpuFrequency(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			cfg := metadata.DefaultMetricsBuilderConfig()
+			cfg := cpumetadata.DefaultMetricsBuilderConfig()
 			cfg.Metrics.SystemCPUTime.Enabled = false
 			cfg.Metrics.SystemCPUFrequency.Enabled = test.enabledFrequency
 
-			scraper := newCPUScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type),
+			scraper := newCPUScraper(t.Context(), scrapertest.NewNopSettings(cpumetadata.Type),
 				&Config{MetricsBuilderConfig: cfg})
 
 			err := scraper.start(t.Context(), componenttest.NewNopHost())

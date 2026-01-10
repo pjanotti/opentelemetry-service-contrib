@@ -1,4 +1,5 @@
 type: cpu
+generated_package_name: cpumetadata
 
 status:
   class: scraper
