@@ -1,4 +1,5 @@
 type: memory
+generated_package_name: memorymetadata
 
 status:
   class: scraper

@@ -14,17 +14,17 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper/internal/memorymetadata"
 )
 
 func TestScrape_UseMemAvailable(t *testing.T) {
-	mbc := metadata.DefaultMetricsBuilderConfig()
+	mbc := memorymetadata.DefaultMetricsBuilderConfig()
 	mbc.Metrics.SystemMemoryUtilization.Enabled = true
 	mbc.Metrics.SystemMemoryUsage.Enabled = true
 	scraperConfig := Config{
 		MetricsBuilderConfig: mbc,
 	}
-	scraper := newMemoryScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &scraperConfig)
+	scraper := newMemoryScraper(t.Context(), scrapertest.NewNopSettings(memorymetadata.Type), &scraperConfig)
 
 	err := scraper.start(t.Context(), componenttest.NewNopHost())
 	require.NoError(t, err, "Failed to initialize memory scraper: %v", err)

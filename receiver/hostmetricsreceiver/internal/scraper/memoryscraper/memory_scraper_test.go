@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper/internal/memorymetadata"
 )
 
 func TestScrape(t *testing.T) {
@@ -37,28 +37,28 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Standard",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: memorymetadata.DefaultMetricsBuilderConfig(),
 			},
 			expectedMetricCount: 1,
 		},
 		{
 			name: "All metrics enabled",
 			config: &Config{
-				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
-					Metrics: metadata.MetricsConfig{
-						SystemMemoryUtilization: metadata.MetricConfig{
+				MetricsBuilderConfig: memorymetadata.MetricsBuilderConfig{
+					Metrics: memorymetadata.MetricsConfig{
+						SystemMemoryUtilization: memorymetadata.MetricConfig{
 							Enabled: true,
 						},
-						SystemMemoryUsage: metadata.MetricConfig{
+						SystemMemoryUsage: memorymetadata.MetricConfig{
 							Enabled: true,
 						},
-						SystemMemoryPageSize: metadata.MetricConfig{
+						SystemMemoryPageSize: memorymetadata.MetricConfig{
 							Enabled: true,
 						},
-						SystemLinuxMemoryAvailable: metadata.MetricConfig{
+						SystemLinuxMemoryAvailable: memorymetadata.MetricConfig{
 							Enabled: true,
 						},
-						SystemLinuxMemoryDirty: metadata.MetricConfig{
+						SystemLinuxMemoryDirty: memorymetadata.MetricConfig{
 							Enabled: true,
 						},
 					},
@@ -76,7 +76,7 @@ func TestScrape(t *testing.T) {
 			virtualMemoryFunc: func(context.Context) (*mem.VirtualMemoryStat, error) { return nil, errors.New("err1") },
 			expectedErr:       "err1",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: memorymetadata.DefaultMetricsBuilderConfig(),
 			},
 			expectedMetricCount: 1,
 		},
@@ -85,7 +85,7 @@ func TestScrape(t *testing.T) {
 			bootTimeFunc:      func(context.Context) (uint64, error) { return 100, errors.New("err1") },
 			initializationErr: "err1",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: memorymetadata.DefaultMetricsBuilderConfig(),
 			},
 			expectedMetricCount: 1,
 		},
@@ -93,7 +93,7 @@ func TestScrape(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			scraper := newMemoryScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), test.config)
+			scraper := newMemoryScraper(t.Context(), scrapertest.NewNopSettings(memorymetadata.Type), test.config)
 			if test.virtualMemoryFunc != nil {
 				scraper.virtualMemory = test.virtualMemoryFunc
 			}
@@ -139,7 +139,7 @@ func TestScrape(t *testing.T) {
 				assertMemoryUsageMetricHasLinuxSpecificStateLabels(t, metrics.At(memUsageIdx))
 			} else if runtime.GOOS != "windows" {
 				internal.AssertSumMetricHasAttributeValue(t, metrics.At(memUsageIdx), 2, "state",
-					pcommon.NewValueStr(metadata.AttributeStateInactive.String()))
+					pcommon.NewValueStr(memorymetadata.AttributeStateInactive.String()))
 			}
 
 			internal.AssertSameTimeStampForAllMetrics(t, metrics)
@@ -165,13 +165,13 @@ func TestScrape_MemoryUtilization(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			mbc := metadata.DefaultMetricsBuilderConfig()
+			mbc := memorymetadata.DefaultMetricsBuilderConfig()
 			mbc.Metrics.SystemMemoryUtilization.Enabled = true
 			mbc.Metrics.SystemMemoryUsage.Enabled = false
 			scraperConfig := Config{
 				MetricsBuilderConfig: mbc,
 			}
-			scraper := newMemoryScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &scraperConfig)
+			scraper := newMemoryScraper(t.Context(), scrapertest.NewNopSettings(memorymetadata.Type), &scraperConfig)
 			if test.virtualMemoryFunc != nil {
 				scraper.virtualMemory = test.virtualMemoryFunc
 			}
@@ -194,7 +194,7 @@ func TestScrape_MemoryUtilization(t *testing.T) {
 				assertMemoryUtilizationMetricHasLinuxSpecificStateLabels(t, metrics.At(0))
 			} else if runtime.GOOS != "windows" {
 				internal.AssertGaugeMetricHasAttributeValue(t, metrics.At(0), 2, "state",
-					pcommon.NewValueStr(metadata.AttributeStateInactive.String()))
+					pcommon.NewValueStr(memorymetadata.AttributeStateInactive.String()))
 			}
 
 			internal.AssertSameTimeStampForAllMetrics(t, metrics)
@@ -206,10 +206,10 @@ func assertMemoryUsageMetricValid(t *testing.T, metric pmetric.Metric, expectedN
 	assert.Equal(t, expectedName, metric.Name())
 	assert.GreaterOrEqual(t, metric.Sum().DataPoints().Len(), 2)
 	internal.AssertSumMetricHasAttributeValue(t, metric, 0, "state",
-		pcommon.NewValueStr(metadata.AttributeStateUsed.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateUsed.String()))
 	assert.Positive(t, metric.Sum().DataPoints().At(0).IntValue())
 	internal.AssertSumMetricHasAttributeValue(t, metric, 1, "state",
-		pcommon.NewValueStr(metadata.AttributeStateFree.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateFree.String()))
 	assert.Positive(t, metric.Sum().DataPoints().At(1).IntValue())
 }
 
@@ -217,31 +217,31 @@ func assertMemoryUtilizationMetricValid(t *testing.T, metric pmetric.Metric, exp
 	assert.Equal(t, expectedName, metric.Name())
 	assert.GreaterOrEqual(t, metric.Gauge().DataPoints().Len(), 2)
 	internal.AssertGaugeMetricHasAttributeValue(t, metric, 0, "state",
-		pcommon.NewValueStr(metadata.AttributeStateUsed.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateUsed.String()))
 	assert.Positive(t, metric.Gauge().DataPoints().At(0).DoubleValue())
 	internal.AssertGaugeMetricHasAttributeValue(t, metric, 1, "state",
-		pcommon.NewValueStr(metadata.AttributeStateFree.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateFree.String()))
 	assert.Positive(t, metric.Gauge().DataPoints().At(1).DoubleValue())
 }
 
 func assertMemoryUsageMetricHasLinuxSpecificStateLabels(t *testing.T, metric pmetric.Metric) {
 	internal.AssertSumMetricHasAttributeValue(t, metric, 2, "state",
-		pcommon.NewValueStr(metadata.AttributeStateBuffered.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateBuffered.String()))
 	internal.AssertSumMetricHasAttributeValue(t, metric, 3, "state",
-		pcommon.NewValueStr(metadata.AttributeStateCached.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateCached.String()))
 	internal.AssertSumMetricHasAttributeValue(t, metric, 4, "state",
-		pcommon.NewValueStr(metadata.AttributeStateSlabReclaimable.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateSlabReclaimable.String()))
 	internal.AssertSumMetricHasAttributeValue(t, metric, 5, "state",
-		pcommon.NewValueStr(metadata.AttributeStateSlabUnreclaimable.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateSlabUnreclaimable.String()))
 }
 
 func assertMemoryUtilizationMetricHasLinuxSpecificStateLabels(t *testing.T, metric pmetric.Metric) {
 	internal.AssertGaugeMetricHasAttributeValue(t, metric, 2, "state",
-		pcommon.NewValueStr(metadata.AttributeStateBuffered.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateBuffered.String()))
 	internal.AssertGaugeMetricHasAttributeValue(t, metric, 3, "state",
-		pcommon.NewValueStr(metadata.AttributeStateCached.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateCached.String()))
 	internal.AssertGaugeMetricHasAttributeValue(t, metric, 4, "state",
-		pcommon.NewValueStr(metadata.AttributeStateSlabReclaimable.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateSlabReclaimable.String()))
 	internal.AssertGaugeMetricHasAttributeValue(t, metric, 5, "state",
-		pcommon.NewValueStr(metadata.AttributeStateSlabUnreclaimable.String()))
+		pcommon.NewValueStr(memorymetadata.AttributeStateSlabUnreclaimable.String()))
 }

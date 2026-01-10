@@ -18,7 +18,7 @@ import (
 	"go.opentelemetry.io/collector/scraper"
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/memoryscraper/internal/memorymetadata"
 )
 
 const metricsLen = 2
@@ -29,7 +29,7 @@ var ErrInvalidTotalMem = errors.New("invalid total memory")
 type memoryScraper struct {
 	settings scraper.Settings
 	config   *Config
-	mb       *metadata.MetricsBuilder
+	mb       *memorymetadata.MetricsBuilder
 
 	// for mocking gopsutil mem.VirtualMemory
 	bootTime      func(context.Context) (uint64, error)
@@ -55,7 +55,7 @@ func (s *memoryScraper) start(ctx context.Context, _ component.Host) error {
 		return err
 	}
 
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb = memorymetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, memorymetadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
 	return nil
 }
 
