@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper/internal/networkmetadata"
 )
 
 func TestCreateDefaultConfig(t *testing.T) {
@@ -22,7 +22,7 @@ func TestCreateMetrics(t *testing.T) {
 	factory := NewFactory()
 	cfg := &Config{}
 
-	scraper, err := factory.CreateMetrics(t.Context(), scrapertest.NewNopSettings(metadata.Type), cfg)
+	scraper, err := factory.CreateMetrics(t.Context(), scrapertest.NewNopSettings(networkmetadata.Type), cfg)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, scraper)
@@ -32,7 +32,7 @@ func TestCreateMetrics_Error(t *testing.T) {
 	factory := NewFactory()
 	cfg := &Config{Include: MatchConfig{Interfaces: []string{""}}}
 
-	_, err := factory.CreateMetrics(t.Context(), scrapertest.NewNopSettings(metadata.Type), cfg)
+	_, err := factory.CreateMetrics(t.Context(), scrapertest.NewNopSettings(networkmetadata.Type), cfg)
 
 	assert.Error(t, err)
 }

@@ -1,4 +1,5 @@
 type: network
+generated_package_name: networkmetadata
 
 status:
   class: scraper

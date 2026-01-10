@@ -19,7 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/networkscraper/internal/networkmetadata"
 )
 
 func TestScrape(t *testing.T) {
@@ -44,7 +44,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Standard",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig(),
 			},
 			expectConntrakMetrics:   true,
 			expectConnectionsMetric: true,
@@ -52,7 +52,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Standard with direction removed",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig(),
 			},
 			expectConntrakMetrics:   true,
 			expectConnectionsMetric: true,
@@ -60,7 +60,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Validate Start Time",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig(),
 			},
 			bootTimeFunc:            func(context.Context) (uint64, error) { return 100, nil },
 			expectConntrakMetrics:   true,
@@ -70,7 +70,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Include Filter that matches nothing",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig(),
 				Include:              MatchConfig{filterset.Config{MatchType: "strict"}, []string{"@*^#&*$^#)"}},
 			},
 			expectConntrakMetrics:   false,
@@ -79,7 +79,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Invalid Include Filter",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig(),
 				Include:              MatchConfig{Interfaces: []string{"test"}},
 			},
 			newErrRegex:             "^error creating network interface include filters:",
@@ -88,7 +88,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Invalid Exclude Filter",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig(),
 				Exclude:              MatchConfig{Interfaces: []string{"test"}},
 			},
 			newErrRegex:             "^error creating network interface exclude filters:",
@@ -111,7 +111,7 @@ func TestScrape(t *testing.T) {
 		},
 		{
 			name:             "Connections Error",
-			config:           &Config{MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()},
+			config:           &Config{MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig()},
 			connectionsFunc:  func(context.Context, string) ([]net.ConnectionStat, error) { return nil, errors.New("err3") },
 			expectedErr:      "failed to read TCP connections: err3",
 			expectedErrCount: connectionsMetricsLen,
@@ -119,7 +119,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Conntrack error ignored if metric disabled",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(), // conntrack metrics are disabled by default
+				MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig(), // conntrack metrics are disabled by default
 			},
 			conntrackFunc:           func(context.Context) ([]net.FilterStat, error) { return nil, errors.New("conntrack failed") },
 			expectConntrakMetrics:   true,
@@ -128,7 +128,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Connections metrics is disabled",
 			config: func() *Config {
-				cfg := Config{MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()}
+				cfg := Config{MetricsBuilderConfig: networkmetadata.DefaultMetricsBuilderConfig()}
 				cfg.Metrics.SystemNetworkConnections.Enabled = false
 				return &cfg
 			}(),
@@ -141,7 +141,7 @@ func TestScrape(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			scraper, err := newNetworkScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), test.config)
+			scraper, err := newNetworkScraper(t.Context(), scrapertest.NewNopSettings(networkmetadata.Type), test.config)
 			if test.mutateScraper != nil {
 				test.mutateScraper(scraper)
 			}
@@ -229,7 +229,7 @@ func assertNetworkIOMetricValid(t *testing.T, metric pmetric.Metric, expectedNam
 func assertNetworkConnectionsMetricValid(t *testing.T, metric pmetric.Metric) {
 	assert.Equal(t, "system.network.connections", metric.Name())
 	internal.AssertSumMetricHasAttributeValue(t, metric, 0, "protocol",
-		pcommon.NewValueStr(metadata.AttributeProtocolTcp.String()))
+		pcommon.NewValueStr(networkmetadata.AttributeProtocolTcp.String()))
 	internal.AssertSumMetricHasAttribute(t, metric, 0, "state")
 	// Flaky test gives 12 or 13, so bound it
 	assert.LessOrEqual(t, 12, metric.Sum().DataPoints().Len())
