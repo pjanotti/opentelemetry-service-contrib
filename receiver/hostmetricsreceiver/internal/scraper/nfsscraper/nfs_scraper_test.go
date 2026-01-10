@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/nfsscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/nfsscraper/internal/nfsmetadata"
 )
 
 func mockGetNfsStats() (*NfsStats, error) {
@@ -159,9 +159,9 @@ func TestScrape(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			scraper := &nfsScraper{
-				settings: scrapertest.NewNopSettings(metadata.Type),
+				settings: scrapertest.NewNopSettings(nfsmetadata.Type),
 				config: &Config{
-					MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+					MetricsBuilderConfig: nfsmetadata.DefaultMetricsBuilderConfig(),
 				},
 				getNfsStats:  mockGetNfsStats,
 				getNfsdStats: mockGetNfsdStats,

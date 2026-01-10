@@ -1,4 +1,5 @@
 type: nfs
+generated_package_name: nfsmetadata
 
 status:
   class: scraper

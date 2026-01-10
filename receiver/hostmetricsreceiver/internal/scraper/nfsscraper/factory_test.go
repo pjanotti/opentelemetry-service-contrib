@@ -9,14 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/nfsscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/nfsscraper/internal/nfsmetadata"
 )
 
 func TestNfsScraper(t *testing.T) {
 	factory := NewFactory()
 	cfg := &Config{}
 
-	scraper, err := factory.CreateMetrics(t.Context(), scrapertest.NewNopSettings(metadata.Type), cfg)
+	scraper, err := factory.CreateMetrics(t.Context(), scrapertest.NewNopSettings(nfsmetadata.Type), cfg)
 
 	if supportedOS {
 		assert.NoError(t, err)

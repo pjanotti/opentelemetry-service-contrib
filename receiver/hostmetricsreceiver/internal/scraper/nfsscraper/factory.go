@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/scraper"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/nfsscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/nfsscraper/internal/nfsmetadata"
 )
 
 var (
@@ -21,13 +21,13 @@ var (
 
 // NewFactory for NFS scraper.
 func NewFactory() scraper.Factory {
-	return scraper.NewFactory(metadata.Type, createDefaultConfig, scraper.WithMetrics(createMetricsScraper, metadata.MetricsStability))
+	return scraper.NewFactory(nfsmetadata.Type, createDefaultConfig, scraper.WithMetrics(createMetricsScraper, nfsmetadata.MetricsStability))
 }
 
 // createDefaultConfig creates the default configuration for the Scraper.
 func createDefaultConfig() component.Config {
 	return &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: nfsmetadata.DefaultMetricsBuilderConfig(),
 	}
 }
 
