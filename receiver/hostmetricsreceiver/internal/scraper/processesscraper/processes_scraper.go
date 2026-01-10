@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/collector/scraper"
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processesscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processesscraper/internal/processesmetadata"
 )
 
 var metricsLength = func() int {
@@ -34,7 +34,7 @@ var metricsLength = func() int {
 type processesScraper struct {
 	settings scraper.Settings
 	config   *Config
-	mb       *metadata.MetricsBuilder
+	mb       *processesmetadata.MetricsBuilder
 
 	// for mocking gopsutil
 	getMiscStats func(context.Context) (*load.MiscStat, error)
@@ -48,8 +48,8 @@ type proc interface {
 }
 
 type processesMetadata struct {
-	countByStatus    map[metadata.AttributeStatus]int64 // ignored if enableProcessesCount is false
-	processesCreated *int64                             // ignored if enableProcessesCreated is false
+	countByStatus    map[processesmetadata.AttributeStatus]int64 // ignored if enableProcessesCount is false
+	processesCreated *int64                                      // ignored if enableProcessesCreated is false
 }
 
 // newProcessesScraper creates a set of Processes related metrics
@@ -76,7 +76,7 @@ func (s *processesScraper) start(ctx context.Context, _ component.Host) error {
 		return err
 	}
 
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb = processesmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, processesmetadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
 	return nil
 }
 

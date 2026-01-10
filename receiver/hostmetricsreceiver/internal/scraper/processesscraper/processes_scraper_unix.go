@@ -11,7 +11,7 @@ import (
 
 	"github.com/shirou/gopsutil/v4/process"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processesscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processesscraper/internal/processesmetadata"
 )
 
 const (
@@ -25,7 +25,7 @@ func (s *processesScraper) getProcessesMetadata(ctx context.Context) (processesM
 		return processesMetadata{}, err
 	}
 
-	countByStatus := map[metadata.AttributeStatus]int64{}
+	countByStatus := map[processesmetadata.AttributeStatus]int64{}
 	for _, process := range processes {
 		var status []string
 		status, err = process.Status()
@@ -36,7 +36,7 @@ func (s *processesScraper) getProcessesMetadata(ctx context.Context) (processesM
 		}
 		state, ok := toAttributeStatus(status)
 		if !ok {
-			countByStatus[metadata.AttributeStatusUnknown]++
+			countByStatus[processesmetadata.AttributeStatusUnknown]++
 			continue
 		}
 		countByStatus[state]++
@@ -56,15 +56,15 @@ func (s *processesScraper) getProcessesMetadata(ctx context.Context) (processesM
 		procsCreated = &v
 	}
 
-	countByStatus[metadata.AttributeStatusBlocked] = int64(miscStat.ProcsBlocked)
-	countByStatus[metadata.AttributeStatusRunning] = int64(miscStat.ProcsRunning)
+	countByStatus[processesmetadata.AttributeStatusBlocked] = int64(miscStat.ProcsBlocked)
+	countByStatus[processesmetadata.AttributeStatusRunning] = int64(miscStat.ProcsRunning)
 
 	totalKnown := int64(0)
 	for _, count := range countByStatus {
 		totalKnown += count
 	}
 	if int64(miscStat.ProcsTotal) > totalKnown {
-		countByStatus[metadata.AttributeStatusUnknown] = int64(miscStat.ProcsTotal) - totalKnown
+		countByStatus[processesmetadata.AttributeStatusUnknown] = int64(miscStat.ProcsTotal) - totalKnown
 	}
 
 	return processesMetadata{
@@ -73,25 +73,25 @@ func (s *processesScraper) getProcessesMetadata(ctx context.Context) (processesM
 	}, nil
 }
 
-func toAttributeStatus(status []string) (metadata.AttributeStatus, bool) {
+func toAttributeStatus(status []string) (processesmetadata.AttributeStatus, bool) {
 	if len(status) == 0 || status[0] == "" {
-		return metadata.AttributeStatus(0), false
+		return processesmetadata.AttributeStatus(0), false
 	}
 	state, ok := charToState[status[0]]
 	return state, ok
 }
 
-var charToState = map[string]metadata.AttributeStatus{
-	process.Blocked:  metadata.AttributeStatusBlocked,
-	process.Daemon:   metadata.AttributeStatusDaemon,
-	process.Detached: metadata.AttributeStatusDetached,
-	process.Idle:     metadata.AttributeStatusIdle,
-	process.Lock:     metadata.AttributeStatusLocked,
-	process.Orphan:   metadata.AttributeStatusOrphan,
-	process.Running:  metadata.AttributeStatusRunning,
-	process.Sleep:    metadata.AttributeStatusSleeping,
-	process.Stop:     metadata.AttributeStatusStopped,
-	process.System:   metadata.AttributeStatusSystem,
-	process.Wait:     metadata.AttributeStatusPaging,
-	process.Zombie:   metadata.AttributeStatusZombies,
+var charToState = map[string]processesmetadata.AttributeStatus{
+	process.Blocked:  processesmetadata.AttributeStatusBlocked,
+	process.Daemon:   processesmetadata.AttributeStatusDaemon,
+	process.Detached: processesmetadata.AttributeStatusDetached,
+	process.Idle:     processesmetadata.AttributeStatusIdle,
+	process.Lock:     processesmetadata.AttributeStatusLocked,
+	process.Orphan:   processesmetadata.AttributeStatusOrphan,
+	process.Running:  processesmetadata.AttributeStatusRunning,
+	process.Sleep:    processesmetadata.AttributeStatusSleeping,
+	process.Stop:     processesmetadata.AttributeStatusStopped,
+	process.System:   processesmetadata.AttributeStatusSystem,
+	process.Wait:     processesmetadata.AttributeStatusPaging,
+	process.Zombie:   processesmetadata.AttributeStatusZombies,
 }

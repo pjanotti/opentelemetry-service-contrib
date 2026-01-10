@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processesscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/processesscraper/internal/processesmetadata"
 )
 
 var (
@@ -64,8 +64,8 @@ func TestScrape(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			scraper := newProcessesScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+			scraper := newProcessesScraper(t.Context(), scrapertest.NewNopSettings(processesmetadata.Type), &Config{
+				MetricsBuilderConfig: processesmetadata.DefaultMetricsBuilderConfig(),
 			})
 			err := scraper.start(t.Context(), componenttest.NewNopHost())
 			assert.NoError(t, err, "Failed to initialize processes scraper: %v", err)
@@ -137,8 +137,8 @@ func validateRealData(t *testing.T, metrics pmetric.MetricSlice) {
 			}
 			assert.Failf(t, "missing-metric", "metric is missing %q status label", statusVal)
 		}
-		assertContainsStatus(metadata.AttributeStatusRunning.String())
-		assertContainsStatus(metadata.AttributeStatusBlocked.String())
+		assertContainsStatus(processesmetadata.AttributeStatusRunning.String())
+		assertContainsStatus(processesmetadata.AttributeStatusBlocked.String())
 	}
 
 	if expectProcessesCreatedMetric {
@@ -204,13 +204,13 @@ func validateFakeData(t *testing.T, metrics pmetric.MetricSlice) {
 		}
 
 		assert.Equal(t, map[string]int64{
-			metadata.AttributeStatusBlocked.String():  3,
-			metadata.AttributeStatusPaging.String():   1,
-			metadata.AttributeStatusRunning.String():  2,
-			metadata.AttributeStatusSleeping.String(): 4,
-			metadata.AttributeStatusStopped.String():  5,
-			metadata.AttributeStatusUnknown.String():  9,
-			metadata.AttributeStatusZombies.String():  6,
+			processesmetadata.AttributeStatusBlocked.String():  3,
+			processesmetadata.AttributeStatusPaging.String():   1,
+			processesmetadata.AttributeStatusRunning.String():  2,
+			processesmetadata.AttributeStatusSleeping.String(): 4,
+			processesmetadata.AttributeStatusStopped.String():  5,
+			processesmetadata.AttributeStatusUnknown.String():  9,
+			processesmetadata.AttributeStatusZombies.String():  6,
 		}, attrs)
 	}
 

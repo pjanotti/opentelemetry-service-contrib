@@ -1,4 +1,5 @@
 type: processes
+generated_package_name: processesmetadata
 
 status:
   class: scraper
