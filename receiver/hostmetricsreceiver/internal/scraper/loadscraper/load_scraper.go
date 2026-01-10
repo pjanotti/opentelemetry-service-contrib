@@ -18,7 +18,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 	"go.uber.org/zap"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper/internal/loadmetadata"
 )
 
 const metricsLen = 3
@@ -31,7 +31,7 @@ var errPreventScrape = errors.New("cannot scrape load metrics")
 type loadScraper struct {
 	settings   scraper.Settings
 	config     *Config
-	mb         *metadata.MetricsBuilder
+	mb         *loadmetadata.MetricsBuilder
 	skipScrape bool
 
 	// for mocking
@@ -51,7 +51,7 @@ func (s *loadScraper) start(ctx context.Context, _ component.Host) error {
 		return err
 	}
 
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb = loadmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, loadmetadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
 	err = startSampling(ctx, s.settings.Logger)
 	if errors.Is(err, errPreventScrape) {
 		s.settings.Logger.Error("failed to start load scraper sampler", zap.Error(err))

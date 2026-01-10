@@ -20,7 +20,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper/internal/loadmetadata"
 )
 
 const (
@@ -44,14 +44,14 @@ func TestScrape(t *testing.T) {
 			name:        testStandard,
 			saveMetrics: true,
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: loadmetadata.DefaultMetricsBuilderConfig(),
 			},
 		},
 		{
 			name:        testAverage,
 			saveMetrics: true,
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: loadmetadata.DefaultMetricsBuilderConfig(),
 				CPUAverage:           true,
 			},
 			bootTimeFunc: func(context.Context) (uint64, error) { return bootTime, nil },
@@ -60,7 +60,7 @@ func TestScrape(t *testing.T) {
 			name:     "Load Error",
 			loadFunc: func(context.Context) (*load.AvgStat, error) { return nil, errors.New("err1") },
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: loadmetadata.DefaultMetricsBuilderConfig(),
 			},
 			expectedErr: "err1",
 		},
@@ -75,7 +75,7 @@ func TestScrape(t *testing.T) {
 		// wait for measurement to start
 		<-startChan
 
-		scraper := newLoadScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), test.config)
+		scraper := newLoadScraper(t.Context(), scrapertest.NewNopSettings(loadmetadata.Type), test.config)
 		if test.loadFunc != nil {
 			scraper.load = test.loadFunc
 		}

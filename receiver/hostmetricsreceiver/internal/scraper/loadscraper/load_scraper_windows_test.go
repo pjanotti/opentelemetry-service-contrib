@@ -17,7 +17,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/winperfcounters"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/loadscraper/internal/loadmetadata"
 )
 
 func TestStopSamplingWithoutStart(t *testing.T) {
@@ -48,9 +48,9 @@ func TestSetSkipScrapeOnFailureToStart(t *testing.T) {
 
 	scraper := newLoadScraper(
 		t.Context(),
-		scrapertest.NewNopSettings(metadata.Type),
+		scrapertest.NewNopSettings(loadmetadata.Type),
 		&Config{
-			MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+			MetricsBuilderConfig: loadmetadata.DefaultMetricsBuilderConfig(),
 		},
 	)
 	require.NotNil(t, scraper)
@@ -68,9 +68,9 @@ func TestSetSkipScrapeOnFailureToStart(t *testing.T) {
 
 func TestLoadScrapeWithRealData(t *testing.T) {
 	config := Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: loadmetadata.DefaultMetricsBuilderConfig(),
 	}
-	scraper := newLoadScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &config)
+	scraper := newLoadScraper(t.Context(), scrapertest.NewNopSettings(loadmetadata.Type), &config)
 
 	err := scraper.start(t.Context(), componenttest.NewNopHost())
 	require.NoError(t, err, "Failed to start the load scraper")

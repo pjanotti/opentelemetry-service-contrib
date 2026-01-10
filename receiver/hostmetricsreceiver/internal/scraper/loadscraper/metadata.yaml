@@ -1,4 +1,5 @@
 type: load
+generated_package_name: loadmetadata
 
 status:
   class: scraper
