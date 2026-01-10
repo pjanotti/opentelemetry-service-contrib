@@ -4,11 +4,11 @@
 package systemscraper // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/systemscraper"
 
 import (
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/systemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/systemscraper/internal/systemmetadata"
 )
 
 // Config relating to System Metric Scraper.
 type Config struct {
 	// MetricsBuilderConfig allows to customize scraped metrics/attributes representation.
-	metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	systemmetadata.MetricsBuilderConfig `mapstructure:",squash"`
 }

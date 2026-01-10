@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/systemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/systemscraper/internal/systemmetadata"
 )
 
 func TestScrape(t *testing.T) {
@@ -25,8 +25,8 @@ func TestScrape(t *testing.T) {
 	ctx := t.Context()
 	fakeDate := time.Date(2006, 0o1, 0o2, 0o3, 0o4, 0o5, 0, time.UTC)
 
-	s := newSystemScraper(ctx, scrapertest.NewNopSettings(metadata.Type), &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+	s := newSystemScraper(ctx, scrapertest.NewNopSettings(systemmetadata.Type), &Config{
+		MetricsBuilderConfig: systemmetadata.DefaultMetricsBuilderConfig(),
 	})
 
 	// mock

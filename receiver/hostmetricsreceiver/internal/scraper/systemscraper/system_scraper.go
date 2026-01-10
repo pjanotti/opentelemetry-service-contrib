@@ -13,14 +13,14 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/scraper"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/systemscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/systemscraper/internal/systemmetadata"
 )
 
 // scraper for System Metrics
 type systemsScraper struct {
 	settings scraper.Settings
 	config   *Config
-	mb       *metadata.MetricsBuilder
+	mb       *systemmetadata.MetricsBuilder
 
 	// for mocking
 	bootTime func(context.Context) (uint64, error)
@@ -38,7 +38,7 @@ func (s *systemsScraper) start(ctx context.Context, _ component.Host) error {
 		return err
 	}
 
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
+	s.mb = systemmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, systemmetadata.WithStartTime(pcommon.Timestamp(bootTime*1e9)))
 	return nil
 }
 
