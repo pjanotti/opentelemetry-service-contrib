@@ -17,7 +17,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/diskmetadata"
 )
 
 func TestScrape(t *testing.T) {
@@ -35,19 +35,19 @@ func TestScrape(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:          "Standard",
-			config:        &Config{MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()},
+			config:        &Config{MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig()},
 			expectMetrics: metricsLen,
 		},
 		{
 			name:              "Validate Start Time",
-			config:            &Config{MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()},
+			config:            &Config{MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig()},
 			bootTimeFunc:      func(context.Context) (uint64, error) { return 100, nil },
 			expectMetrics:     metricsLen,
 			expectedStartTime: 100 * 1e9,
 		},
 		{
 			name:              "Boot Time Error",
-			config:            &Config{MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()},
+			config:            &Config{MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig()},
 			bootTimeFunc:      func(context.Context) (uint64, error) { return 0, errors.New("err1") },
 			initializationErr: "err1",
 			expectMetrics:     metricsLen,
@@ -55,7 +55,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Include Filter that matches nothing",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig(),
 				Include:              MatchConfig{filterset.Config{MatchType: "strict"}, []string{"@*^#&*$^#)"}},
 			},
 			expectMetrics: 0,
@@ -63,7 +63,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Invalid Include Filter",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig(),
 				Include:              MatchConfig{Devices: []string{"test"}},
 			},
 			newErrRegex: "^error creating device include filters:",
@@ -71,7 +71,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Invalid Exclude Filter",
 			config: &Config{
-				MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+				MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig(),
 				Exclude:              MatchConfig{Devices: []string{"test"}},
 			},
 			newErrRegex: "^error creating device exclude filters:",
@@ -79,7 +79,7 @@ func TestScrape(t *testing.T) {
 		{
 			name: "Disable one metric",
 			config: (func() *Config {
-				config := Config{MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig()}
+				config := Config{MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig()}
 				config.Metrics.SystemDiskIo.Enabled = false
 				return &config
 			})(),
@@ -89,7 +89,7 @@ func TestScrape(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), test.config)
+			scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(diskmetadata.Type), test.config)
 			if test.mutateScraper != nil {
 				test.mutateScraper(scraper)
 			}
@@ -170,9 +170,9 @@ func assertInt64DiskMetricValid(t *testing.T, metric pmetric.Metric, expectDirec
 	internal.AssertSumMetricHasAttribute(t, metric, 0, "device")
 	if expectDirectionLabels {
 		internal.AssertSumMetricHasAttributeValue(t, metric, 0, "direction",
-			pcommon.NewValueStr(metadata.AttributeDirectionRead.String()))
+			pcommon.NewValueStr(diskmetadata.AttributeDirectionRead.String()))
 		internal.AssertSumMetricHasAttributeValue(t, metric, 1, "direction",
-			pcommon.NewValueStr(metadata.AttributeDirectionWrite.String()))
+			pcommon.NewValueStr(diskmetadata.AttributeDirectionWrite.String()))
 	}
 }
 
@@ -190,9 +190,9 @@ func assertDoubleDiskMetricValid(t *testing.T, metric pmetric.Metric, expectDire
 	internal.AssertSumMetricHasAttribute(t, metric, 0, "device")
 	if expectDirectionLabels {
 		internal.AssertSumMetricHasAttributeValue(t, metric, 0, "direction",
-			pcommon.NewValueStr(metadata.AttributeDirectionRead.String()))
+			pcommon.NewValueStr(diskmetadata.AttributeDirectionRead.String()))
 		internal.AssertSumMetricHasAttributeValue(t, metric, metric.Sum().DataPoints().Len()-1, "direction",
-			pcommon.NewValueStr(metadata.AttributeDirectionWrite.String()))
+			pcommon.NewValueStr(diskmetadata.AttributeDirectionWrite.String()))
 	}
 }
 

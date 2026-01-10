@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/diskmetadata"
 )
 
 const (
@@ -32,7 +32,7 @@ type diskScraper struct {
 	settings  scraper.Settings
 	config    *Config
 	startTime pcommon.Timestamp
-	mb        *metadata.MetricsBuilder
+	mb        *diskmetadata.MetricsBuilder
 	includeFS filterset.FilterSet
 	excludeFS filterset.FilterSet
 
@@ -71,7 +71,7 @@ func (s *diskScraper) start(ctx context.Context, _ component.Host) error {
 	}
 
 	s.startTime = pcommon.Timestamp(bootTime * 1e9)
-	s.mb = metadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, metadata.WithStartTime(s.startTime))
+	s.mb = diskmetadata.NewMetricsBuilder(s.config.MetricsBuilderConfig, s.settings, diskmetadata.WithStartTime(s.startTime))
 	return nil
 }
 
@@ -100,16 +100,16 @@ func (s *diskScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 func (s *diskScraper) recordDiskIOMetric(now pcommon.Timestamp, ioCounters map[string]disk.IOCountersStat) {
 	for device := range ioCounters {
 		ioCounter := ioCounters[device]
-		s.mb.RecordSystemDiskIoDataPoint(now, int64(ioCounter.ReadBytes), device, metadata.AttributeDirectionRead)
-		s.mb.RecordSystemDiskIoDataPoint(now, int64(ioCounter.WriteBytes), device, metadata.AttributeDirectionWrite)
+		s.mb.RecordSystemDiskIoDataPoint(now, int64(ioCounter.ReadBytes), device, diskmetadata.AttributeDirectionRead)
+		s.mb.RecordSystemDiskIoDataPoint(now, int64(ioCounter.WriteBytes), device, diskmetadata.AttributeDirectionWrite)
 	}
 }
 
 func (s *diskScraper) recordDiskOperationsMetric(now pcommon.Timestamp, ioCounters map[string]disk.IOCountersStat) {
 	for device := range ioCounters {
 		ioCounter := ioCounters[device]
-		s.mb.RecordSystemDiskOperationsDataPoint(now, int64(ioCounter.ReadCount), device, metadata.AttributeDirectionRead)
-		s.mb.RecordSystemDiskOperationsDataPoint(now, int64(ioCounter.WriteCount), device, metadata.AttributeDirectionWrite)
+		s.mb.RecordSystemDiskOperationsDataPoint(now, int64(ioCounter.ReadCount), device, diskmetadata.AttributeDirectionRead)
+		s.mb.RecordSystemDiskOperationsDataPoint(now, int64(ioCounter.WriteCount), device, diskmetadata.AttributeDirectionWrite)
 	}
 }
 
@@ -123,8 +123,8 @@ func (s *diskScraper) recordDiskIOTimeMetric(now pcommon.Timestamp, ioCounters m
 func (s *diskScraper) recordDiskOperationTimeMetric(now pcommon.Timestamp, ioCounters map[string]disk.IOCountersStat) {
 	for device := range ioCounters {
 		ioCounter := ioCounters[device]
-		s.mb.RecordSystemDiskOperationTimeDataPoint(now, float64(ioCounter.ReadTime)/1e3, device, metadata.AttributeDirectionRead)
-		s.mb.RecordSystemDiskOperationTimeDataPoint(now, float64(ioCounter.WriteTime)/1e3, device, metadata.AttributeDirectionWrite)
+		s.mb.RecordSystemDiskOperationTimeDataPoint(now, float64(ioCounter.ReadTime)/1e3, device, diskmetadata.AttributeDirectionRead)
+		s.mb.RecordSystemDiskOperationTimeDataPoint(now, float64(ioCounter.WriteTime)/1e3, device, diskmetadata.AttributeDirectionWrite)
 	}
 }
 

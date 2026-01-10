@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scrapererror"
 	"go.opentelemetry.io/collector/scraper/scrapertest"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/diskmetadata"
 )
 
 func TestScrape_Others(t *testing.T) {
@@ -39,7 +39,7 @@ func TestScrape_Others(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &Config{})
+			scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(diskmetadata.Type), &Config{})
 			require.NoError(t, err, "Failed to create disk scraper: %v", err)
 
 			if test.ioCountersFunc != nil {

@@ -17,16 +17,16 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/winperfcounters"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/diskmetadata"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/testmocks"
 )
 
 // TestDiskScrapeWithRealData validates that the disk scraper can collect actual disk metrics from Windows performance counters.
 func TestDiskScrapeWithRealData(t *testing.T) {
 	config := Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig(),
 	}
-	scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &config)
+	scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(diskmetadata.Type), &config)
 	require.NoError(t, err, "Failed to create disk scraper")
 
 	err = scraper.start(t.Context(), componenttest.NewNopHost())
@@ -66,7 +66,7 @@ func TestScrape_Error(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &Config{})
+			scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(diskmetadata.Type), &Config{})
 			require.NoError(t, err, "Failed to create disk scraper: %v", err)
 
 			scraper.perfCounterFactory = func(string, string, string) (winperfcounters.PerfCounterWatcher, error) {
@@ -112,7 +112,7 @@ func TestStart_Error(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(metadata.Type), &Config{})
+			scraper, err := newDiskScraper(t.Context(), scrapertest.NewNopSettings(diskmetadata.Type), &Config{})
 			require.NoError(t, err, "Failed to create disk scraper: %v", err)
 
 			if tc.newPerfCounterFactory != nil {

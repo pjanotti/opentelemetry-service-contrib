@@ -1,4 +1,5 @@
 type: disk
+generated_package_name: diskmetadata
 
 status:
   class: scraper

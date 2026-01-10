@@ -9,18 +9,18 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/scraper"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver/internal/scraper/diskscraper/internal/diskmetadata"
 )
 
 // NewFactory for Disk scraper.
 func NewFactory() scraper.Factory {
-	return scraper.NewFactory(metadata.Type, createDefaultConfig, scraper.WithMetrics(createMetricsScraper, metadata.MetricsStability))
+	return scraper.NewFactory(diskmetadata.Type, createDefaultConfig, scraper.WithMetrics(createMetricsScraper, diskmetadata.MetricsStability))
 }
 
 // createDefaultConfig creates the default configuration for the Scraper.
 func createDefaultConfig() component.Config {
 	return &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: diskmetadata.DefaultMetricsBuilderConfig(),
 	}
 }
 
