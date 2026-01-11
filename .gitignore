@@ -47,3 +47,7 @@ internal/tools/testresults/*
 go.work*
 
 /result
+
+# Ignore golang test binaries
+*.test
+*.test.exe
