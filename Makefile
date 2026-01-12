@@ -245,9 +245,22 @@ goporto: $(PORTO)
 .PHONY: for-all
 for-all:
 	@set -e; for dir in $$ALL_MODS; do \
-	  (cd "$${dir}" && \
+	  (export COMPONENT_DIR="$${dir}"; cd "$${dir}" && \
 	  	echo "running $${CMD} in $${dir}" && \
 	 	$${CMD} ); \
+	done
+
+.PHONY: for-all-docker-exec
+for-all-docker-exec:
+	@EXCLUDE_FILE=".exclude-modules"; \
+	set -e; for dir in $$ALL_MODS; do \
+	  if [ -f "$$EXCLUDE_FILE" ] && grep -q "^$${dir}" "$$EXCLUDE_FILE"; then \
+	    echo "Skipping $${dir} (excluded)"; \
+	  else \
+	    (cd "$${dir}" && \
+	      echo "running $${CMD} in $${dir}" && \
+	      docker exec -it test /bin/sh -c "cd $${dir} && $${CMD}" ); \
+	  fi; \
 	done
 
 .PHONY: for-generated

@@ -1,0 +1,3 @@
+./receiver/googlecloudspannerreceiver       # Goleak errors
+./receiver/jmxreceiver                      # Goleak errors
+./receiver/journaldreceiver                 # Requires journalctl on the image
